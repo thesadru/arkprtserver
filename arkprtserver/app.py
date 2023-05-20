@@ -1,6 +1,7 @@
 """Server app."""
 import bisect
 import os
+import sys
 import urllib.parse
 
 import aiohttp.web
@@ -67,3 +68,8 @@ async def index(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
 app.router.add_static("/static", "arkprtserver/static", name="static")
 app.add_routes(routes)
+
+
+def entrypoint(argv: list[str] = sys.argv) -> aiohttp.web.Application:
+    """Return app as dummy aiohttp entrypoint."""
+    return app

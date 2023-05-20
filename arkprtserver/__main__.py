@@ -1,24 +1,24 @@
 """Entry-point."""
 import logging
-import sys
+import os
 
 import aiohttp.web
 
 import arkprtserver.app
 
 
-def main(argv: list[str] = sys.argv) -> None:
+def main() -> None:
     """Entry-point."""
-    formatter = logging.Formatter(fmt="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
-
     handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     logger.addHandler(handler)
 
-    aiohttp.web.run_app(arkprtserver.app.app)  # pyright: ignore[reportUnknownMemberType]
+    aiohttp.web.run_app(  # pyright: ignore[reportUnknownMemberType]
+        arkprtserver.app.app,
+        host=os.environ.get("HOST"),
+        port=int(os.environ.get("PORT", "8080")),
+    )
 
 
 if __name__ == "__main__":
