@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Arknights toolbox</title>
+    <meta name="description" content="Arknights toolbox for searching users">
+    <meta name="keywords" content="arknights toolbox search">
+</head>
+
+<style>
+    img {
+        height: 12px
+    }
+</style>
+
+<link rel="stylesheet" href="static/style.css">
+
+<body>
+    <div class="search">
+        <form action="/" , method="get">
+            <input type="text" name="nickname" placeholder="Search for player">
+            <input type="submit" value="Search">
+        </form>
+    </div>
+    <br>
+    <div class="users">
+        {% if not users %}
+        Please enter a nickname to search for.
+        {% endif %}
+        {% for user in users %}
+        <div class="user">
+            {# TODO: Support default and event avatars #}
+            <span class="hoverable">
+                {% set sec = gamedata.get_operator(user.secretary) %}
+                <a class="thumb" href="https://arknights.fandom.com/wiki/{{ sec.name.replace(' ', '_') }}">
+                    <img src="{{ get_image('avatars', user.secretary) }}" class="avatar" title="{{ sec.name }}">
+                    <span>
+                        <img src="{{ get_image('characters', user.secretary_skin_id) }}">
+                    </span>
+                </a>
+            </span>
+            <div class="description">
+                <div class="title">
+                    <span class="level">LV{{ user.level }}</span>
+                    <span class="nickname">{{ user.nickname }}#{{ user.nick_number }}</span> -
+                    {{ user.uid }} ({{user.server_name }})
+                </div>
+                <div class="bio">{{ user.resume }}</div>
+            </div>
+            <div class="stats">
+                <span>Playing since: {{ user.register_ts.strftime("%Y-%m-%d") }}</span><br>
+                <span>Last online: {{ user.last_online_time.strftime("%Y-%m-%d") }}</span><br>
+                <span>Characters: {{ user.char_cnt}}</span>
+                <span>Furniture: {{ user.furn_cnt }}</span>
+            </div>
+            <br>
+            <div class="supports">
+                Support units:
+                {# skipping all 1*/2* skill-less operators cause I don't wanna deal with that #}
+                {% for support in user.assist_char_list|reject("none")|rejectattr("skill_index", "eq", -1) %}
+                <div class="support">
+                    <span class="hoverable">
+                        <a class="thumb"
+                            href="https://arknights.fandom.com/wiki/{{ support.static.name.replace(' ', '_') }}">
+                            <img src="{{ get_image('avatars', support.char_id) }}" class="operator"
+                                title="{{ support.static.name }}">
+                            <span>
+                                <img src="{{ get_image('characters', support.skin_id) }}">
+                            </span>
+                        </a>
+                    </span>
+
+                    {% if support.potential_rank %}
+                    <img src="{{ get_image('ui/potential', support.potential_rank + 1) }}" class="potential"
+                        title="Potential {{ support.potential_rank + 1 }}">
+                    {% endif %}
+
+                    <span class="operator-name">{{ support.static.name }}</span>
+
+                    <img src="{{ get_image('ui/elite', support.evolve_phase) }}"
+                        title="Elite {{ support.evolve_phase }}">
+                    E{{ support.evolve_phase }}L{{ support.level }}
+
+                    {% set skill = support.skills[support.skill_index] %}
+                    <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                        title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
+                    S{{ support.skill_index+1 }}M{{ skill.specialize_level }}
+
+                    <br>
+
+                    trust {{ calculate_trust(support.favor_point) }}% ({{ support.favor_point }})
+
+                    skills LV{{ support.main_skill_lvl }}
+                    {% for skill in support.skills %}
+                    <span class="skill">
+                        <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                            title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
+                        {% if skill.specialize_level > 0 %}
+                        <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}" class="mastery"
+                            title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
+                        {% endif %}
+                        {# {{skill.static.levels[support.main_skill_lvl-1].name}} #}
+                    </span>
+                    {% endfor %}
+
+                    {% if support.current_equip and "001" not in support.current_equip %}
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    <img src="{{ get_image('equip/icon', support.current_equip) }}">
+                    module L{{ support.equip[support.current_equip].level }}
+                    {% endif %}
+
+                    <br>
+                </div>
+                {% endfor %}
+            </div>
+            <br>
+            <div class="teams">
+                Teams:
+                {% for team, amount in user.team_v2.items() %}
+                {% set teams = gamedata._get_excel('handbook_team_table') %}
+                <span style="color: {{ 'blue' if team.upper() in user.board else 'auto' }}">
+                    <img src="{{ get_image('factions', 'logo_' + team) }}" style="filter:invert(1)"
+                        title="{{ teams[team].power_name }}">
+                    {{amount}}
+                </span>
+                {% endfor %}
+            </div>
+            <hr>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+<footer>
+    Made with arkprts
+</footer>
+
+</html>

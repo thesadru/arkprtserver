@@ -1,0 +1,101 @@
+body {
+    font-size: 20px;
+    margin: 0 auto;
+    width: fit-content;
+    max-width: 80%;
+    min-width: 50%;
+}
+
+img {
+    height: 16px;
+}
+
+.hoverable {
+    position: relative;
+}
+
+.thumb span {
+    position: absolute;
+    visibility: hidden;
+}
+
+.thumb:hover,
+.thumb:hover span {
+    visibility: visible;
+    top: 0;
+    left: 20px;
+    top: -256px;
+    z-index: 1;
+}
+
+.thumb span img {
+    height: 512px;
+}
+
+.users {
+    border: 1px solid black;
+    padding: 10px;
+}
+
+
+.avatar {
+    height: 100px;
+    float: left;
+    margin-right: 10px;
+}
+
+.title {
+    font-size: 40px;
+}
+
+.nickname {
+    font-weight: bold;
+}
+
+.bio {
+    font-style: italic;
+}
+
+.stats {
+    clear: both;
+}
+
+.operator {
+    height: 40px;
+    float: left;
+    margin-right: 10px;
+}
+
+.operator-name {
+    font-weight: bold;
+}
+
+.support {
+    clear: both;
+}
+
+.skill {
+    top: 0;
+    left: 0;
+    position: relative;
+}
+
+
+.mastery {
+    /* hardcoded to the bottom right corner of the skill */
+    position: absolute;
+    top: 6px;
+    left: 5px;
+    height: 10px;
+    background-color: #00000060;
+}
+
+
+.teams {
+    font-weight: bold;
+}
+
+footer {
+    bottom: 20px;
+    text-align: center;
+}
