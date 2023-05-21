@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="icon" type="image/png"
+    href="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png">
+
+<head>
+    <title>Arkprts</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="View in-game arknights information updated real-time.">
+    <meta name="keywords" content="arknights search real-time">
+</head>
+
+<link rel="stylesheet" href="static/style.css">
+
+
+<body>
+    <br>
+    <div class="simple-border">
+        Enter your Yostar email to login and click "Send code".
+        You will receive a code in your email.
+        Enter the code in the box below and click "Login".
+        <br>
+        The server will only send the browser a cookie with your token.
+        Nothing is stored.
+        <br>
+        WARNING: Viewing your user data will kick you out of arknights!
+        Arknights does not allow multiple connections to the same account.
+        <form action="/login" method="GET">
+            <input type="text" name="email" placeholder="Yostar email" required
+                value="{{ request.query.get('email', '') }}">
+            <br>
+            <input type="code" name="code" placeholder="email code">
+            <input type="submit" value="Send code">
+            <br>
+            <input type="submit" value="Login">
+        </form>
+        <br>
+        {% if error %}
+        <b>ERROR:</b> {{ error }}
+        {% endif %}
+    </div>
+</body>
+
+</html>

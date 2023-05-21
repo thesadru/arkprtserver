@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="icon" type="image/png"
+    href="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png">
+
+<head>
+    <title>Arkprts</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="View in-game arknights information updated real-time.">
+    <meta name="keywords" content="arknights search real-time">
+</head>
+
+<link rel="stylesheet" href="static/style.css">
+
+
+<body>
+    <div id="search">
+        <form action="/search" , method="get">
+            <input type="text" name="nickname" placeholder="Search for player">
+            <input type="submit" value="Search">
+        </form>
+    </div>
+    <br>
+    <div class="simple-border">
+        <span class="hoverable">
+            {% set sec = gamedata.get_operator(user.status.secretary) %}
+            <a class="thumb" href="https://arknights.fandom.com/wiki/{{ sec.name.replace(' ', '_') }}">
+                <img src="{{ get_image('avatars', user.status.secretary) }}" class="avatar-img" title="{{ sec.name }}">
+                <span>
+                    <img src="{{ get_image('characters', user.status.secretary_skin_id) }}">
+                </span>
+            </a>
+        </span>
+        <div>
+            <div class="title">
+                LV{{ user.status.level }}
+                <b>{{ user.status.nickname }}#{{ user.status.nick_number }}</b> -
+                {{ user.status.uid }} ({{user.status.server_name }})
+            </div>
+            <i>{{ user.status.resume }}</i>
+        </div>
+
+        <div class="clear-both">
+            Playing since: {{ user.status.register_ts.strftime("%Y-%m-%d") }}<br>
+            {% set exp_map = gamedata.get_excel("gamedata_const").player_exp_map %}
+            Level {{ user.status.level }} ({{ user.status.exp }}/{{ exp_map[user.status.level-2] }} EXP)
+            Max Sanity: {{ user.status.max_ap }}<br>
+            Current stage: {{ user.status.main_stage_progress }}<br>
+            {% set voice_langs = gamedata.get_excel("charword_table").voice_lang_type_dict %}
+            Voice-over language: {{ voice_langs[user.status.global_voice_lan].name }}<br>
+        </div>
+
+        <br>
+        Inventory
+        <div class="simple-border">
+            {% for item_id, amount in user.status.basic_item_inventory.items()|rejectattr("1", "eq", 0) %}
+            {% set item = gamedata.get_item(item_id) %}
+
+            {% if not item_id.startswith("act") %}
+            <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
+            {% endif %}
+            <b>{{ amount }}</b> {{ item.name }}<br>
+
+            {% endfor %}
+
+            <hr>
+
+            {% for item_id, amount in user.inventory.items()|rejectattr("1", "eq", 0) %}
+            {% set item = gamedata.get_item(item_id) %}
+
+            {% if not item_id.startswith("act") %}
+            <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
+            {% endif %}
+            <b>{{ amount }}</b> {{ item.name }}<br>
+
+            {% endfor %}
+
+            <hr>
+
+            {% for item_id, subitems in user.consumable.items() %}
+            {% for raw_item in subitems.values()|rejectattr("count", "eq", 0) %}
+            {% set item = gamedata.get_item(item_id) %}
+
+            {% if not item_id.startswith("act") %}
+            <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
+            {% endif %}
+            <b>{{ raw_item.count }}</b> {{ item.name }} (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})<br>
+
+            {% endfor %}
+            {% endfor %}
+
+        </div>
+
+        <br>
+
+        Characters
+        <div class="simple-border clear-both">
+            {% for char in user.troop.chars.values()|sort(attribute="star_mark,evolve_phase,level", reverse=true) %}
+            <div>
+                <span class="hoverable">
+                    <a class="thumb" href="https://arknights.fandom.com/wiki/{{ char.static.name.replace(' ', '_') }}">
+                        <img src="{{ get_image('avatars', char.char_id) }}" class="operator-img"
+                            title="{{ char.static.name }}">
+                        <span>
+                            <img src="{{ get_image('characters', char.skin) }}">
+                        </span>
+                    </a>
+                </span>
+
+                {% if char.potential_rank %}
+                <img src="{{ get_image('ui/potential', char.potential_rank + 1) }}"
+                    title="Potential {{ char.potential_rank + 1 }}">
+                {% endif %}
+
+                <b style="color:{{ 'gold' if char.star_mark else 'auto' }}">{{ char.static.name }}</b>
+
+                <img src="{{ get_image('ui/elite', char.evolve_phase) }}" title="Elite {{ char.evolve_phase }}">
+                E{{ char.evolve_phase }}L{{ char.level }}
+                {% if char.exp > 0 %}
+                <i>(+{{ char.exp }}exp)</i>
+                {% endif %}
+                <br>
+
+                trust {{ calculate_trust(char.favor_point) }}% ({{ char.favor_point }})
+                {{ voice_langs[char.voice_lan].name }}
+                <br>
+
+                skills LV{{ char.main_skill_lvl }}
+                <br>
+                {% for skill in char.skills %}
+                <span class="relative" style="color:{{ 'gray' if not skill.unlock else 'auto' }}">
+                    <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                        title="{{ skill.static.levels[char.main_skill_lvl-1+skill.specialize_level].name }}">
+                    {% if skill.specialize_level > 0 %}
+                    <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}" class="mastery-img"
+                        title="{{ skill.static.levels[char.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
+                    {% endif %}
+                    <b style="color:{{ 'blue' if char.default_skill_index == loop.index0 else 'auto' }}">
+                        {{skill.static.levels[char.main_skill_lvl-1].name}}
+                    </b>
+                    {% if skill.specialize_level > 0 %}
+                    <b>
+                        M{{ skill.specialize_level }}
+                    </b>
+                    {% endif %}
+                </span>
+                <br>
+                {% endfor %}
+
+                {% if char.current_equip and "001" not in char.current_equip %}
+                <img src="{{ get_image('equip/icon', char.current_equip) }}">
+                module LV{{ char.equip[char.current_equip].level }}
+                {% endif %}
+
+                <hr>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+<footer>
+    Made with arkprts
+</footer>
+
+</html>

@@ -1,15 +1,32 @@
+/* center body to make it look readable */
 body {
     font-size: 20px;
     margin: 0 auto;
     width: fit-content;
-    max-width: 80%;
+    max-width: 90%;
     min-width: 50%;
 }
 
 img {
+    /* a bit smaller than the text for inline */
     height: 16px;
 }
 
+footer {
+    bottom: 20px;
+    text-align: center;
+}
+
+/* forms */
+#login {
+    /* always float in top-right */
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 2px;
+}
+
+/* enable hovering on images */
 .hoverable {
     position: relative;
 }
@@ -22,6 +39,8 @@ img {
 .thumb:hover,
 .thumb:hover span {
     visibility: visible;
+    /* hack to place the image to the right center */
+    /* TODO: Make it go anywhere available on the screen */
     top: 0;
     left: 20px;
     top: -256px;
@@ -29,59 +48,33 @@ img {
 }
 
 .thumb span img {
+    /* TODO: The image is still loaded on phones despite being impossible to click */
     height: 512px;
 }
 
-.users {
+
+/* black border makes it easy to separate, just use <hr> between items */
+.simple-border {
     border: 1px solid black;
     padding: 10px;
 }
 
 
-.avatar {
+/* these are always placed in front of text */
+.avatar-img {
     height: 100px;
     float: left;
     margin-right: 10px;
 }
 
-.title {
-    font-size: 40px;
-}
-
-.nickname {
-    font-weight: bold;
-}
-
-.bio {
-    font-style: italic;
-}
-
-.stats {
-    clear: both;
-}
-
-.operator {
+.operator-img {
     height: 40px;
     float: left;
     margin-right: 10px;
 }
 
-.operator-name {
-    font-weight: bold;
-}
-
-.support {
-    clear: both;
-}
-
-.skill {
-    top: 0;
-    left: 0;
-    position: relative;
-}
-
-
-.mastery {
+/* TODO: Combine the images normally */
+.mastery-img {
     /* hardcoded to the bottom right corner of the skill */
     position: absolute;
     top: 6px;
@@ -90,12 +83,16 @@ img {
     background-color: #00000060;
 }
 
-
-.teams {
-    font-weight: bold;
+/* TODO: this should probably be done with header tags */
+.title {
+    font-size: 40px;
 }
 
-footer {
-    bottom: 20px;
-    text-align: center;
+/* TODO: I don't think these should require classes */
+.relative {
+    position: relative;
+}
+
+.clear-both {
+    clear: both;
 }
