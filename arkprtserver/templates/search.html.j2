@@ -67,14 +67,19 @@
             <div class="clear-both">
                 Playing since: {{ user.register_ts.strftime("%Y-%m-%d") }}<br>
                 Last online: {{ user.last_online_time.strftime("%Y-%m-%d") }}<br>
-                Current stage: {{ user.main_stage_progress }}<br>
+                {% if user.main_stage_progress %}
+                {% set stage = gamedata.get_excel("stage_table").stages[user.main_stage_progress] %}
+                Current stage: {{ stage.code }} ({{ stage.name }})<br>
+                {% else %}
+                Current stage: Completed<br>
+                {% endif %}
                 Characters: {{ user.char_cnt}}
                 Furniture: {{ user.furn_cnt }}
             </div>
             <br>
             <div>
                 Support units:
-                {# skipping all 1*/2* skill-less operators cause I don't wanna deal with that #}
+                <!-- skipping all 1*/2* skill-less operators cause I don't wanna deal with that -->
                 {% for support in user.assist_char_list|reject("none")|rejectattr("skill_index", "eq", -1) %}
                 <div class="clear-both">
                     <span class="hoverable">

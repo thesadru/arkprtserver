@@ -35,7 +35,7 @@
             <div class="title">
                 LV{{ user.status.level }}
                 <b>{{ user.status.nickname }}#{{ user.status.nick_number }}</b> -
-                {{ user.status.uid }} ({{user.status.server_name }})
+                {{ user.status.uid }}
             </div>
             <i>{{ user.status.resume }}</i>
         </div>
@@ -44,8 +44,13 @@
             Playing since: {{ user.status.register_ts.strftime("%Y-%m-%d") }}<br>
             {% set exp_map = gamedata.get_excel("gamedata_const").player_exp_map %}
             Level {{ user.status.level }} ({{ user.status.exp }}/{{ exp_map[user.status.level-2] }} EXP)
-            Max Sanity: {{ user.status.max_ap }}<br>
-            Current stage: {{ user.status.main_stage_progress }}<br>
+            - Max Sanity: {{ user.status.max_ap }}<br>
+            {% if user.status.main_stage_progress %}
+            {% set stage = gamedata.get_excel("stage_table").stages[user.status.main_stage_progress] %}
+            Current stage: {{ stage.code }} ({{ stage.name }})<br>
+            {% else %}
+            Current stage: Completed<br>
+            {% endif %}
             {% set voice_langs = gamedata.get_excel("charword_table").voice_lang_type_dict %}
             Voice-over language: {{ voice_langs[user.status.global_voice_lan].name }}<br>
         </div>
@@ -53,41 +58,56 @@
         <br>
         Inventory
         <div class="simple-border">
-            {% for item_id, amount in user.status.basic_item_inventory.items()|rejectattr("1", "eq", 0) %}
-            {% set item = gamedata.get_item(item_id) %}
-
-            {% if not item_id.startswith("act") %}
-            <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
-            {% endif %}
-            <b>{{ amount }}</b> {{ item.name }}<br>
-
-            {% endfor %}
-
-            <hr>
-
-            {% for item_id, amount in user.inventory.items()|rejectattr("1", "eq", 0) %}
-            {% set item = gamedata.get_item(item_id) %}
-
-            {% if not item_id.startswith("act") %}
-            <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
-            {% endif %}
-            <b>{{ amount }}</b> {{ item.name }}<br>
-
-            {% endfor %}
+            <table>
+                {% for item_id, amount in user.status.basic_item_inventory.items()|rejectattr("1", "eq", 0) %}
+                <tr>
+                    <td>
+                        {% set item = gamedata.get_item(item_id) %}
+                        {% if not item_id.startswith("act") %}
+                        <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right"><b>{{ amount }}</b></td>
+                    <td>{{ item.name }}</td>
+                </tr>
+                {% endfor %}
+            </table>
 
             <hr>
 
-            {% for item_id, subitems in user.consumable.items() %}
-            {% for raw_item in subitems.values()|rejectattr("count", "eq", 0) %}
-            {% set item = gamedata.get_item(item_id) %}
+            <table>
+                {% for item_id, amount in user.inventory.items()|rejectattr("1", "eq", 0) %}
+                <tr>
+                    <td>
+                        {% set item = gamedata.get_item(item_id) %}
+                        {% if not item_id.startswith("act") %}
+                        <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
+                        {% endif %}
+                    </td>
+                    <td style="text-align: right"><b>{{ amount }}</b></td>
+                    <td>{{ item.name }}</td>
+                </tr>
+                {% endfor %}
+            </table>
 
-            {% if not item_id.startswith("act") %}
-            <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
-            {% endif %}
-            <b>{{ raw_item.count }}</b> {{ item.name }} (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})<br>
+            <hr>
 
-            {% endfor %}
-            {% endfor %}
+            <table>
+                {% for item_id, subitems in user.consumable.items() %}
+                {% for raw_item in subitems.values()|rejectattr("count", "eq", 0) %}
+                <tr>
+                    <td>
+                        {% set item = gamedata.get_item(item_id) %}
+                        {% if not item_id.startswith("act") %}
+                        <img src="{{ get_image('items', item.icon_id) }}" title="{{ item.icon_id }}">
+                        {% endif %}
+                    </td>
+                    <td><b>{{ raw_item.count }}</b></td>
+                    <td>{{ item.name }} (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </table>
 
         </div>
 

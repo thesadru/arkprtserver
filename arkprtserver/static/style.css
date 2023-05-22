@@ -1,10 +1,15 @@
 /* center body to make it look readable */
 body {
     font-size: 20px;
-    margin: 0 auto;
+    margin: 10px auto;
     width: fit-content;
     max-width: 90%;
     min-width: 50%;
+    background: #f2f2f2;
+    color: #404040;
+    /* Novocento and Noto is used by Arknights in-game */
+    font-family: "Novocento Sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    position: relative;
 }
 
 img {
@@ -41,9 +46,9 @@ footer {
     visibility: visible;
     /* hack to place the image to the right center */
     /* TODO: Make it go anywhere available on the screen */
-    top: 0;
     left: 20px;
-    top: -256px;
+    /* top: 0; */
+    top: -128px;
     z-index: 1;
 }
 
