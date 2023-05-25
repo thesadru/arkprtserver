@@ -15,6 +15,7 @@ typeCheckingMode = "strict"
 reportMissingTypeStubs = "none"
 reportImportCycles = "none"
 reportPrivateUsage = "none"
+reportUnknownMemberType = "warning"
 
 [tool.coverage.run]
 source = ["arkprtserver"]

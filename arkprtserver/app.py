@@ -11,6 +11,8 @@ import arkprts
 import dotenv
 import jinja2
 
+from . import gamepress
+
 __all__ = ("app",)
 
 dotenv.load_dotenv()
@@ -36,6 +38,24 @@ def get_image(type: str, id: str) -> str:
 def calculate_trust(trust: int) -> int:
     """Calculate the percentage to display for certain trust points."""
     return bisect.bisect_left(FAVOR_FRAMES, trust)
+
+
+async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
+    """Get gamepress tierlist."""
+    operators = await gamepress.get_gamepress_tierlist()
+
+    operator_names = {operator.name: id for id, operator in client.gamedata.get_excel("character_table").items()}
+
+    for operator in operators:
+        # I'm not handling this, too annoying
+        if operator.name == "Amiya (Guard)":
+            continue
+        if operator.name == "Rosa (Poca)":
+            operator.name = "Rosa"
+
+        operator.operator_id = operator_names[operator.name]
+
+    return {operator.operator_id: operator for operator in operators if operator.operator_id}
 
 
 def _get_client(pure: bool = False) -> arkprts.Client:
@@ -73,6 +93,8 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
     global FAVOR_FRAMES  # noqa: PLW0603 # globals :(
     frames = client.gamedata.get_excel("favor_table").favor_frames
     FAVOR_FRAMES = [frame["data"].favor_point for frame in frames]  # pyright: ignore[reportConstantRedefinition]
+
+    env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
 
 
 @aiohttp.web.middleware
