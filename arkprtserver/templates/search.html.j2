@@ -68,7 +68,7 @@
                 Playing since: {{ user.register_ts.strftime("%Y-%m-%d") }}<br>
                 Last online: {{ user.last_online_time.strftime("%Y-%m-%d") }}<br>
                 {% if user.main_stage_progress %}
-                {% set stage = gamedata.get_excel("stage_table").stages[user.main_stage_progress] %}
+                {% set stage = gamedata.stage_table.stages[user.main_stage_progress] %}
                 Current stage: {{ stage.code }} ({{ stage.name }})<br>
                 {% else %}
                 Current stage: Completed<br>
@@ -99,7 +99,7 @@
                     {% endif %}
 
                     <b>{{ support.static.name }}</b>
-                    ({{ tierlist[support.char_id].tier }})
+                    ({{ tierlist.get(support.char_id).tier }})
 
                     <img src="{{ get_image('ui/elite', support.evolve_phase) }}"
                         title="Elite {{ support.evolve_phase }}">
@@ -141,10 +141,9 @@
             <div>
                 Teams:
                 {% for team, amount in user.team_v2.items() %}
-                {% set teams = gamedata.get_excel('handbook_team_table') %}
                 <span style="color: {{ 'blue' if team.upper() in user.board else 'auto' }}">
                     <img src="{{ get_image('factions', 'logo_' + team) }}" style="filter:invert(1)"
-                        title="{{ teams[team].power_name }}">
+                        title="{{ gamedata.handbook_team_table[team].power_name }}">
                     <b>{{amount}}</b>
                 </span>
                 {% endfor %}

@@ -42,16 +42,16 @@
 
         <div class="clear-both">
             Playing since: {{ user.status.register_ts.strftime("%Y-%m-%d") }}<br>
-            {% set exp_map = gamedata.get_excel("gamedata_const").player_exp_map %}
+            {% set exp_map = gamedata.gamedata_const.player_exp_map %}
             Level {{ user.status.level }} ({{ user.status.exp }}/{{ exp_map[user.status.level-2] }} EXP)
             - Max Sanity: {{ user.status.max_ap }}<br>
             {% if user.status.main_stage_progress %}
-            {% set stage = gamedata.get_excel("stage_table").stages[user.status.main_stage_progress] %}
+            {% set stage = gamedata.stage_table.stages[user.status.main_stage_progress] %}
             Current stage: {{ stage.code }} ({{ stage.name }})<br>
             {% else %}
             Current stage: Completed<br>
             {% endif %}
-            {% set voice_langs = gamedata.get_excel("charword_table").voice_lang_type_dict %}
+            {% set voice_langs = gamedata.charword_table.voice_lang_type_dict %}
             Voice-over language: {{ voice_langs[user.status.global_voice_lan].name }}<br>
         </div>
 
@@ -133,7 +133,7 @@
                 {% endif %}
 
                 <b style="color:{{ 'gold' if char.star_mark else 'auto' }}">{{ char.static.name }}</b>
-                ({{ tierlist[char.char_id].tier }})
+                ({{ tierlist.get(char.char_id).tier }})
 
                 <img src="{{ get_image('ui/elite', char.evolve_phase) }}" title="Elite {{ char.evolve_phase }}">
                 E{{ char.evolve_phase }}L{{ char.level }}

@@ -44,7 +44,9 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
     """Get gamepress tierlist."""
     operators = await gamepress.get_gamepress_tierlist()
 
-    operator_names = {operator.name: id for id, operator in client.gamedata.get_excel("character_table").items()}
+    operator_names = {
+        operator.name: id for id, operator in client.gamedata.character_table.items() if id.startswith("char_")
+    }
 
     for operator in operators:
         # I'm not handling this, too annoying
@@ -91,7 +93,7 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
     await client.gamedata.download_gamedata()
 
     global FAVOR_FRAMES  # noqa: PLW0603 # globals :(
-    frames = client.gamedata.get_excel("favor_table").favor_frames
+    frames = client.gamedata.favor_table.favor_frames
     FAVOR_FRAMES = [frame["data"].favor_point for frame in frames]  # pyright: ignore[reportConstantRedefinition]
 
     env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
