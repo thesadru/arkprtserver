@@ -4,7 +4,7 @@ import typing
 import bs4
 import pydantic
 
-__all__ = ["TIERS", "GamepressOperator", "get_gamepress_tierlist"]
+__all__ = ["GamepressOperator", "TIERS", "get_gamepress_tierlist"]
 
 TIERS: list[str] = [
     "EX",
@@ -46,6 +46,13 @@ class GamepressOperator(pydantic.BaseModel):
 
     operator_id: str = ""
     """Operator ID."""
+    char: object | None = None
+    """Operator data."""
+
+    @property
+    def tier_index(self) -> int:
+        """Get the tier index."""
+        return TIERS.index(self.tier)
 
 
 def parse_raw_tierlist(text: str) -> typing.Any:

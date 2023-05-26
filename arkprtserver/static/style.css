@@ -12,6 +12,26 @@ body {
     position: relative;
 }
 
+h1 {
+    font-size: 60px;
+    margin: 0;
+}
+
+h2 {
+    font-size: 40px;
+    margin: 0;
+}
+
+h3 {
+    font-size: 30px;
+    margin: 0;
+}
+
+h4 {
+    font-size: 20px;
+    margin: 0;
+}
+
 img {
     /* a bit smaller than the text for inline */
     height: 16px;
@@ -20,6 +40,26 @@ img {
 footer {
     bottom: 20px;
     text-align: center;
+}
+
+h1>img {
+    /* a bit smaller than the text for inline */
+    height: 64px;
+}
+
+h2>img {
+    /* a bit smaller than the text for inline */
+    height: 36px;
+}
+
+h3>img {
+    /* a bit smaller than the text for inline */
+    height: 24px;
+}
+
+h4>img {
+    /* a bit smaller than the text for inline */
+    height: 16px;
 }
 
 /* forms */
@@ -92,6 +132,7 @@ footer {
 .title {
     font-size: 40px;
 }
+
 
 /* TODO: I don't think these should require classes */
 .relative {

@@ -19,7 +19,7 @@ dotenv.load_dotenv()
 
 app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
-env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True)
+env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
 # not actually pure, gamedata is just delayed
 client = arkprts.Client(pure=True)
@@ -185,6 +185,27 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
     user = await user_client.get_data()
 
     template = env.get_template("user.html.j2")
+    return aiohttp.web.Response(text=template.render(user=user, request=request), content_type="text/html")
+
+
+@routes.get("/optimize")
+async def optimize(request: aiohttp.web.Request) -> aiohttp.web.Response:
+    """Optimize."""
+    if not request.cookies.get("channel_uid") or not request.cookies.get("token"):
+        return aiohttp.web.HTTPTemporaryRedirect("/login")
+
+    user_client = _get_client()
+    try:
+        await user_client.login_with_token(request.cookies["channel_uid"], request.cookies["token"])
+    except arkprts.errors.BaseArkprtsError:
+        response = aiohttp.web.HTTPTemporaryRedirect("/login")
+        response.del_cookie("channel_uid")
+        response.del_cookie("token")
+        return response
+
+    user = await user_client.get_data()
+
+    template = env.get_template("optimize.html.j2")
     return aiohttp.web.Response(text=template.render(user=user, request=request), content_type="text/html")
 
 

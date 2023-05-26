@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="icon" type="image/png"
+    href="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png">
+
+<head>
+    <title>Arkprts</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="View in-game arknights information updated real-time.">
+    <meta name="keywords" content="arknights search real-time">
+</head>
+
+<link rel="stylesheet" href="static/style.css">
+
+<body>
+    <div id="search">
+        <form action="/search" , method="get">
+            <input type="text" name="nickname" placeholder="Search for player">
+            <input type="submit" value="Search">
+        </form>
+    </div>
+    <br>
+
+    {# funky little jinja thingy #}
+    {% for char in user.troop.chars.values() %}
+    {% do tierlist[char.char_id].__setattr__("char", char) %}
+    {% endfor %}
+
+    <div class="simple-border">
+        <h1>Owned characters:</h1>
+
+        {% for class_name, class_operators in tierlist.values()|rejectattr("char","none")|groupby("class_name")%}
+        <hr>
+        <hr>
+        <h2>
+            <img src="{{ get_image('classes', 'class_' + class_name.lower()) }}" style="filter:invert(1)">
+            {{ class_name }}
+        </h2>
+        {% for archetype_name, archetype_operators in class_operators|groupby("archetype_name") %}
+        <hr>
+        <h3>
+            {% set archetype_id = archetype_operators[0].char.static.sub_profession_id %}
+            <img src="{{ get_image('ui/subclass', 'sub_' + archetype_id + '_icon') }}" style="filter:invert(1)">
+            {{ archetype_name }}
+        </h3>
+        <table>
+            {% for tier_index, tier_operators in archetype_operators|groupby("tier_index") %}
+            <tr>
+                <td>
+                    <h3>{{ tier_operators[0].tier }}</h3>
+                </td>
+                <td style="white-space: nowrap;">
+                    {% for operator in tier_operators %}
+                    <span class="hoverable">
+                        <a class="thumb"
+                            href="https://arknights.fandom.com/wiki/{{ operator.char.static.name.replace(' ', '_') }}">
+                            <img src="{{ get_image('avatars', operator.operator_id ) }}" class="operator-img"
+                                title="{{ operator.char.static.name }}">
+                            <span>
+                                <img src="{{ get_image('characters', operator.operator_id + '#1') }}">
+                            </span>
+                        </a>
+                    </span>
+                    {{ operator.char.static.name }}
+                    <br>
+                    <img src="{{ get_image('ui/elite', operator.char.evolve_phase) }}"
+                        title="Elite {{ operator.char.evolve_phase }}">
+                    E{{ operator.char.evolve_phase }}L{{ operator.char.level }}
+                    <br>
+
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endfor %}
+        {% endfor %}
+
+    </div>
+</body>
+
+<footer>
+    Made with arkprts | Tierlist by Gamepress
+</footer>
+
+</html>
