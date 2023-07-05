@@ -119,9 +119,9 @@ async def get_gamepress_tierlist() -> list[GamepressOperator]:
     """Get the tier list."""
     import aiohttp
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get("https://gamepress.gg/arknights/tier-list/arknights-operator-tier-list") as resp:
-            text = await resp.text()
+    url = "https://gamepress.gg/arknights/tier-list/arknights-operator-tier-list"
+    async with aiohttp.ClientSession() as session, session.get(url) as resp:
+        text = await resp.text()
 
     operators: list[GamepressOperator] = []
 

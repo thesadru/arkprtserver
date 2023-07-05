@@ -16,6 +16,11 @@
     <div id="search">
         <form action="/search" , method="get">
             <input type="text" name="nickname" placeholder="Search for player">
+            <select name="server" value="{{ server }}">
+                <option value="en">EN</option>
+                <option value="jp">JP</option>
+                <option value="kr">KR</option>
+            </select>
             <input type="submit" value="Search">
         </form>
     </div>

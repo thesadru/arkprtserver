@@ -25,8 +25,14 @@
         <form action="/search" method="GET">
             {# the defaults should be based on the query parameters #}
             {% set nickname = request.query.get("nickname", "") %}
+            {% set server = request.query.get("server", "en") %}
             {% set all = request.query.get("all", "0") == "1" %}
             <input type="text" name="nickname" placeholder="Search for player" value="{{ nickname }}" required>
+            <select name="server" value="{{ server }}">
+                <option value="en">EN</option>
+                <option value="jp">JP</option>
+                <option value="kr">KR</option>
+            </select>
             <input type="checkbox" name="all" value="1" {{ 'checked' if all else '' }}>
             <label for="all" style="font-size: 12px">Show all</label>
             &nbsp;&nbsp;&nbsp;&nbsp;

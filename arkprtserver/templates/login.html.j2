@@ -26,6 +26,13 @@
         WARNING: Viewing your user data will kick you out of arknights!
         Arknights does not allow multiple connections to the same account.
         <form action="/login" method="GET">
+            <label for="server">Server:</label>
+            <select name="server">
+                <option value="en">EN</option>
+                <option value="jp">JP</option>
+                <option value="kr">KR</option>
+            </select>
+            <br>
             <input type="text" name="email" placeholder="Yostar email" required
                 value="{{ request.query.get('email', '') }}">
             <br>
