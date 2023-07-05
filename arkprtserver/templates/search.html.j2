@@ -28,10 +28,10 @@
             {% set server = request.query.get("server", "en") %}
             {% set all = request.query.get("all", "0") == "1" %}
             <input type="text" name="nickname" placeholder="Search for player" value="{{ nickname }}" required>
-            <select name="server" value="{{ server }}">
-                <option value="en">EN</option>
-                <option value="jp">JP</option>
-                <option value="kr">KR</option>
+            <select name="server">
+                <option value="en" {{"selected" if server=="en" }}>EN</option>
+                <option value="jp" {{"selected" if server=="jp" }}>JP</option>
+                <option value="kr" {{"selected" if server=="kr" }}>KR</option>
             </select>
             <input type="checkbox" name="all" value="1" {{ 'checked' if all else '' }}>
             <label for="all" style="font-size: 12px">Show all</label>
@@ -118,7 +118,7 @@
 
                     <br>
 
-                    trust {{ calculate_trust(support.favor_point) }}% ({{ support.favor_point }})
+                    trust {{ support.trust }}% ({{ support.favor_point }})
 
                     skills LV{{ support.main_skill_lvl }}
                     {% for skill in support.skills %}

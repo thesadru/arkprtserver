@@ -15,8 +15,14 @@
 
 <body>
     <div id="search">
-        <form action="/search" , method="get">
-            <input type="text" name="nickname" placeholder="Search for player">
+        <form action="/search" method="GET">
+            <input type="text" name="nickname" placeholder="Search for player" required>
+            <select name="server">
+                <option value="en">EN</option>
+                <option value="jp">JP</option>
+                <option value="kr">KR</option>
+            </select>
+            &nbsp;&nbsp;&nbsp;&nbsp;
             <input type="submit" value="Search">
         </form>
     </div>
@@ -142,7 +148,7 @@
                 {% endif %}
                 <br>
 
-                trust {{ calculate_trust(char.favor_point) }}% ({{ char.favor_point }})
+                trust {{ char.favor_point.trust }}% ({{ char.favor_point }})
                 {{ voice_langs[char.voice_lan].name }}
                 <br>
 

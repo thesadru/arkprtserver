@@ -1,6 +1,5 @@
 """Server app."""
 import asyncio
-import bisect
 import logging
 import sys
 import typing
@@ -24,8 +23,6 @@ env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape
 
 client = arkprts.Client(server="en")
 
-FAVOR_FRAMES: list[int] = []
-
 LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 
 
@@ -35,11 +32,6 @@ def get_image(type: str, id: str) -> str:
     id = urllib.parse.quote(id)
 
     return f"https://raw.githubusercontent.com/Aceship/Arknight-Images/main/{type}/{id}.png"
-
-
-def calculate_trust(trust: int) -> int:
-    """Calculate the percentage to display for certain trust points."""
-    return bisect.bisect_left(FAVOR_FRAMES, trust)
 
 
 async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
@@ -64,7 +56,6 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
 
 env_globals = dict(
     get_image=get_image,
-    calculate_trust=calculate_trust,
     client=client,
     gamedata=client.gamedata,
 )
