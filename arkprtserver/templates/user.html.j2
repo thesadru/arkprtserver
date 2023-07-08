@@ -109,7 +109,12 @@
                         {% endif %}
                     </td>
                     <td><b>{{ raw_item.count }}</b></td>
-                    <td>{{ item.name }} (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})</td>
+                    <td>
+                    {{ item.name }} 
+                    {% if raw_item.ts %}
+                    (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})
+                    {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
                 {% endfor %}

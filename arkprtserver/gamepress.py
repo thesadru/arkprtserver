@@ -46,7 +46,7 @@ class GamepressOperator(pydantic.BaseModel):
 
     operator_id: str = ""
     """Operator ID."""
-    char: object | None = None
+    char: typing.Optional[object] = None
     """Operator data."""
 
     @property

@@ -1,6 +1,7 @@
 """Server app."""
 import asyncio
 import logging
+import os
 import sys
 import typing
 import urllib.parse
@@ -21,7 +22,7 @@ app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
 env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
-client = arkprts.Client(server="en")
+client = arkprts.Client(server="en", gamedata=os.environ.get("GAMEDATA"))
 
 LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 
@@ -166,7 +167,7 @@ async def login(request: aiohttp.web.Request) -> aiohttp.web.Response:
     return response
 
 
-async def authorize(request: aiohttp.web.Request) -> arkprts.Client | aiohttp.web.Response:
+async def authorize(request: aiohttp.web.Request) -> typing.Union[arkprts.Client, aiohttp.web.Response]:
     """Attempt to authorize or redirect to login."""
     if not request.cookies.get("channel_uid") or not request.cookies.get("token") or not request.cookies.get("server"):
         return aiohttp.web.HTTPTemporaryRedirect("/login")
