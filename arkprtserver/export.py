@@ -5,6 +5,8 @@ import urllib.parse
 import arkprts.models
 import typing_extensions
 
+T = typing.TypeVar("T")
+
 KroosterOperators = typing.Mapping[
     str,
     typing.TypedDict(
@@ -61,7 +63,7 @@ def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
             "level": char.level,
             "skillLevel": char.main_skill_lvl,
             "mastery": [skill.specialize_level or None for skill in char.skills],
-            "module": [module.level if not module.locked else None for module in char.equip.values()],
+            "module": [module.level if not module.locked else None for module in char.equip.values()][1:],
             "skin": urllib.parse.quote(skin_id),
         }
 
