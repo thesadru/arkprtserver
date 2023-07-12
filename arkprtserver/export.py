@@ -33,6 +33,13 @@ def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
     data: KroosterOperators = {}
 
     for char in user.troop.chars.values():
+        if "@" in char.skin:  # shop skin
+            skin_id = char.skin.replace("@", "_")
+        elif char.skin.endswith("#1"):  # default skin
+            skin_id = char.char_id
+        else:  # E2 skin
+            skin_id = char.skin.replace("#", "_")
+
         data[char.char_id] = {
             "id": char.char_id,
             "name": char.static.name,
@@ -54,8 +61,8 @@ def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
             "level": char.level,
             "skillLevel": char.main_skill_lvl,
             "mastery": [skill.specialize_level or None for skill in char.skills],
-            "module": [module.level if not module.hide else None for module in char.equip.values()],
-            "skin": urllib.parse.quote(char.skin),
+            "module": [module.level if not module.locked else None for module in char.equip.values()],
+            "skin": urllib.parse.quote(skin_id),
         }
 
     return data
