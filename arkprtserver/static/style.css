@@ -42,6 +42,15 @@ footer {
     text-align: center;
 }
 
+code {
+    white-space: pre-line;
+    font-size: 12px;
+    /* make the line height smaller, this does nothing for some reason */
+    padding: 0;
+    line-height: 12px;
+    margin: 0px 0px;
+}
+
 h1>img {
     /* a bit smaller than the text for inline */
     height: 64px;

@@ -12,6 +12,12 @@
 
 <link rel="stylesheet" href="static/style.css">
 
+<script>
+    const copyContent = async (selector) => {
+        let text = document.getElementById(selector).innerHTML;
+        await navigator.clipboard.writeText(text);
+    }
+</script>
 
 <body>
     <div id="search">
@@ -25,6 +31,30 @@
             &nbsp;&nbsp;&nbsp;&nbsp;
             <input type="submit" value="Search">
         </form>
+    </div>
+    <br>
+    <div id="export" class="simple-border">
+        <details>
+            <summary>
+                Export characters to krooster (local storage)
+                <button onclick="copyContent('kroos-char-export')">Copy!</button>
+            </summary>
+            <code id="kroos-char-export">{{ export.export_krooster_operators(user)|tojson }}</code>
+        </details>
+        <details>
+            <summary>
+                Export items to krooster (csv)
+                <button onclick="copyContent('kroos-export')">Copy!</button>
+            </summary>
+            <code id="kroos-export">{{ export.export_krooster_items(user) }}</code>
+        </details>
+        <details>
+            <summary>
+                Export items to penguin statistics (json)
+                <button onclick="copyContent('peguin-export')">Copy!</button>
+            </summary>
+            <code id="peguin-export">{{ export.export_penguin_statistics(user)|tojson }}</code>
+        </details>
     </div>
     <br>
     <div class="simple-border">
@@ -110,10 +140,10 @@
                     </td>
                     <td><b>{{ raw_item.count }}</b></td>
                     <td>
-                    {{ item.name }} 
-                    {% if raw_item.ts %}
-                    (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})
-                    {% endif %}
+                        {{ item.name }}
+                        {% if raw_item.ts %}
+                        (Expires at {{ raw_item.ts.strftime("%Y-%m-%d") }})
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -12,7 +12,7 @@ import arkprts
 import dotenv
 import jinja2
 
-from . import gamepress
+from . import export, gamepress
 
 __all__ = ("app",)
 
@@ -57,6 +57,7 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
 
 env_globals = dict(
     get_image=get_image,
+    export=export,
     client=client,
     gamedata=client.gamedata,
 )
