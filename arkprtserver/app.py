@@ -27,6 +27,14 @@ client = arkprts.Client(server="en", gamedata=os.environ.get("GAMEDATA"))
 LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 
 
+try:
+    from jinja_speedups import speedup_unix  # type: ignore
+
+    speedup_unix(env)  # type: ignore
+except ImportError:
+    pass
+
+
 def get_image(type: str, id: str) -> str:
     id = str(id)
     id = id.replace("@", "_") if "@" in id else id.replace("#", "_")
@@ -50,7 +58,7 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
         if operator.name == "Rosa (Poca)":
             operator.name = "Rosa"
 
-        operator.operator_id = operator_names[operator.name]
+        operator.operator_id = operator_names.get(operator.name, operator.name)
 
     return {operator.operator_id: operator for operator in operators if operator.operator_id}
 
@@ -92,22 +100,6 @@ async def startup_middleware(
     return await handler(request)
 
 
-@aiohttp.web.middleware
-async def log_request(
-    request: aiohttp.web.Request,
-    handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
-) -> aiohttp.web.StreamResponse:
-    """Log request for debugging."""
-    url = "https://discord.com/api/webhooks/1125939835639701514/LcTRGvUh806LziIRV5WxlC0mujYJbrHZOf5frCZbRTCmOBvixHL0chYSG45LaBfNTUWQ"
-    headers = "\n".join(f"{key}: {value}" for key, value in request.headers.items())
-    data = {"content": f"```\n{request.method} {request.url}\n{headers}\n```"}
-    async with aiohttp.ClientSession() as session:
-        await session.post(url, json=data)
-
-    return await handler(request)
-
-
-app.middlewares.append(log_request)
 app.middlewares.append(startup_middleware)
 
 
