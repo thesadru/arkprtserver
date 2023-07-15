@@ -47,6 +47,7 @@ line-length = 130
 # B905: zip without strict= (ugly)
 # C408: Unnecessary dict call (ugly)
 # D105: Missing docstring in magic method (useless)
+# FA100: Missing future annotations.
 # N805: First argument is not self (pydantic)
 # PGH003: Specific rules when ignoring type issues
 # PLR0913: Too many arguments
@@ -71,6 +72,7 @@ ignore = [
   "B905",
   "C408",
   "D105",
+  "FA100",
   "N805",
   "PERF401",
   "PGH003",

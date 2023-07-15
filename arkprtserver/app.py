@@ -1,5 +1,6 @@
 """Server app."""
 import asyncio
+import datetime
 import logging
 import os
 import sys
@@ -68,6 +69,7 @@ env_globals = dict(
     export=export,
     client=client,
     gamedata=client.gamedata,
+    datetime=datetime,
 )
 env.globals.update(env_globals)  # type: ignore
 
