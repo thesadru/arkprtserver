@@ -4,7 +4,7 @@
     href="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png">
 
 <head>
-    <title>Arkprts</title>
+    <title>ArkPRTS</title>
     <meta charset="UTF-8">
     <meta name="description" content="Search arknights users updated real-time.">
     <meta name="keywords" content="arknights search real-time">
@@ -48,7 +48,7 @@
     <br>
     <div class="simple-border">
         {% if not users %}
-        Please enter a nickname to search for.
+        Please enter a nickname to search for (case-sensitive).
         {% endif %}
         {% for user in users %}
         <div id="{{ user.uid }}">
@@ -161,7 +161,7 @@
 </body>
 
 <footer>
-    Made with arkprts
+    Made with ArkPRTS
 </footer>
 
 </html>

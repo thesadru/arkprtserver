@@ -93,4 +93,4 @@ def prettier(session: nox.Session) -> None:
     if not _try_install_prettier(session):
         session.skip("Prettier not installed")
 
-    session.run("prettier", "-w", "*.md", "*.yml", "*.toml", external=True)
+    session.run("prettier", "-w", "*.md", "*.yml", external=True)
