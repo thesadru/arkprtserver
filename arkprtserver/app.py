@@ -162,6 +162,17 @@ async def login(request: aiohttp.web.Request) -> aiohttp.web.Response:
     return response
 
 
+@routes.get("/logout")
+async def logout(request: aiohttp.web.Request) -> aiohttp.web.Response:
+    """Logout."""
+    response = aiohttp.web.HTTPTemporaryRedirect("/login")
+    response.del_cookie("server")
+    response.del_cookie("channel_uid")
+    response.del_cookie("token")
+
+    return response
+
+
 async def authorize(request: aiohttp.web.Request) -> typing.Union[arkprts.Client, aiohttp.web.Response]:
     """Attempt to authorize or redirect to login."""
     if not request.cookies.get("channel_uid") or not request.cookies.get("token") or not request.cookies.get("server"):

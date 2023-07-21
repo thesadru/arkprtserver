@@ -147,7 +147,7 @@
             <div>
                 Teams:
                 {% for team, amount in user.team_v2.items() %}
-                <span style="color: {{ 'blue' if team.upper() in user.board else 'auto' }}">
+                <span>
                     <img src="{{ get_image('factions', 'logo_' + team) }}" style="filter:invert(1)"
                         title="{{ gamedata.handbook_team_table[team].power_name }}">
                     <b>{{amount}}</b>
