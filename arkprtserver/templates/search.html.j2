@@ -91,7 +91,8 @@
                     <span class="hoverable">
                         <a class="thumb"
                             href="https://arknights.fandom.com/wiki/{{ support.static.name.replace(' ', '_') }}">
-                            <img src="{{ get_image('avatars', support.char_id) }}" class="operator-img"
+                            {# aceship only exports char_id or skin_id if not default #}
+                            <img src="{{ get_image('avatars', support.char_id if '@' not in support.skin_id and support.skin_id.endswith('#1') else support.skin_id) }}" class="operator-img"
                                 title="{{ support.static.name }}">
                             <span>
                                 <img src="{{ get_image('characters', support.skin_id) }}">

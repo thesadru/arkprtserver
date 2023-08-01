@@ -94,7 +94,8 @@
             Current stage: Completed<br>
             {% endif %}
             {% set voice_langs = gamedata.charword_table.voice_lang_type_dict %}
-            Voice-over language: {{ voice_langs[user.status.global_voice_lan].name }}<br>
+            
+            Voice-over language: {{ voice_langs[user.status.global_voice_lan or "EN"].name }}<br>
         </div>
 
         <br>
@@ -190,6 +191,8 @@
                 <br>
 
                 trust {{ char.favor_point.trust }}% ({{ char.favor_point }})
+
+		
                 {{ voice_langs[char.voice_lan].name }}
                 <br>
 
