@@ -44,6 +44,13 @@ def get_image(type: str, id: str) -> str:
     return f"https://raw.githubusercontent.com/Aceship/Arknight-Images/main/{type}/{id}.png"
 
 
+def get_avatar(char_id: str, skin_id: str) -> str:
+    if "@" not in skin_id and skin_id.endswith("#1"):
+        skin_id = char_id
+
+    return get_image("avatars", skin_id)
+
+
 async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
     """Get gamepress tierlist."""
     operators = await gamepress.get_gamepress_tierlist()
@@ -66,6 +73,7 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
 
 env_globals = dict(
     get_image=get_image,
+    get_avatar=get_avatar,
     export=export,
     client=client,
     gamedata=client.gamedata,
@@ -86,6 +94,7 @@ app.on_startup.append(startup)
 async def startup_gamedata(app: aiohttp.web.Application) -> None:
     """Load gamedata."""
     await client.update_gamedata()
+    env.globals["announcements"] = await client.network.request("an")
     env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
 
 
@@ -109,6 +118,13 @@ app.middlewares.append(startup_middleware)
 async def index(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """Index page."""
     template = env.get_template("index.html.j2")
+    return aiohttp.web.Response(text=template.render(request=request), content_type="text/html")
+
+
+@routes.get("/about")
+async def about(request: aiohttp.web.Request) -> aiohttp.web.Response:
+    """About page."""
+    template = env.get_template("about.html.j2")
     return aiohttp.web.Response(text=template.render(request=request), content_type="text/html")
 
 
@@ -145,6 +161,10 @@ async def login(request: aiohttp.web.Request) -> aiohttp.web.Response:
         try:
             await auth.get_token_from_email_code(request.query["email"])
         except arkprts.errors.BaseArkprtsError as e:
+            if hasattr(e, "data") and e.data.get("result") == 50003:  # type: ignore
+                e.data["message"] = "Code has been sent in the last 60s, please wait before sending again"  # type: ignore
+                e = arkprts.errors.ArkPrtsError(e.data)  # type: ignore
+
             return aiohttp.web.Response(text=template.render(request=request, error=str(e)), content_type="text/html")
 
         return response

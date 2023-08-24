@@ -104,7 +104,8 @@ def parse_raw_tierlist(text: str) -> typing.Any:
 
                 explanation_tagged = {"=": "summary", "+": "positive", "-": "negative"}
                 for line in explanations:
-                    operator["explanation"][explanation_tagged[line[0]]].append(line.lstrip("+-= "))  # type: ignore
+                    explanation_tag = explanation_tagged.get(line[0], "summary")  # type: ignore
+                    operator["explanation"][explanation_tag].append(line.lstrip("+-= "))
 
                 tier["operators"].append(operator)  # type: ignore
 

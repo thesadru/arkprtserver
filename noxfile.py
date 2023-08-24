@@ -11,7 +11,6 @@ nox.options.sessions = ["reformat", "lint", "type-check", "prettier"]
 nox.options.reuse_existing_virtualenvs = True
 PACKAGE = "arkprtserver"
 GENERAL_TARGETS = ["./arkprtserver", "./noxfile.py"]
-PRETTIER_TARGETS = ["*.md", "*.toml"]
 PYRIGHT_ENV = {"PYRIGHT_PYTHON_FORCE_VERSION": "latest"}
 
 LOGGER = logging.getLogger("nox")
@@ -77,7 +76,7 @@ def verify_types(session: nox.Session) -> None:
 def _try_install_prettier(session: nox.Session) -> bool:
     """Try to install prettier. Return False if failed."""
     try:
-        session.run("npm", "install", "prettier", "prettier-plugin-toml", "--global", external=True)
+        session.run("npm", "install", "prettier", "--global", external=True)
     except Exception as exception:  # noqa: BLE001: Nox throws a bare Exception
         if str(exception) != "Program npm not found":
             raise
@@ -85,12 +84,3 @@ def _try_install_prettier(session: nox.Session) -> bool:
         return True
 
     return False
-
-
-@nox.session(python=False)
-def prettier(session: nox.Session) -> None:
-    """Run prettier on markdown files."""
-    if not _try_install_prettier(session):
-        session.skip("Prettier not installed")
-
-    session.run("prettier", "-w", "*.md", "*.yml", external=True)

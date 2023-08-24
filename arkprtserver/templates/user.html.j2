@@ -67,7 +67,8 @@
         <span class="hoverable">
             {% set sec = gamedata.get_operator(user.status.secretary) %}
             <a class="thumb" href="https://arknights.fandom.com/wiki/{{ sec.name.replace(' ', '_') }}">
-                <img src="{{ get_image('avatars', user.status.secretary) }}" class="avatar-img" title="{{ sec.name }}">
+                <img src="{{ get_avatar(user.status.secretary, user.status.secretary_skin_id) }}" class="avatar-img"
+                    title="{{ sec.name }}">
                 <span>
                     <img src="{{ get_image('characters', user.status.secretary_skin_id) }}">
                 </span>
@@ -94,7 +95,7 @@
             Current stage: Completed<br>
             {% endif %}
             {% set voice_langs = gamedata.charword_table.voice_lang_type_dict %}
-            
+
             Voice-over language: {{ voice_langs[user.status.global_voice_lan or "EN"].name }}<br>
         </div>
 
@@ -167,7 +168,7 @@
             <div>
                 <span class="hoverable">
                     <a class="thumb" href="https://arknights.fandom.com/wiki/{{ char.static.name.replace(' ', '_') }}">
-                        <img src="{{ get_image('avatars', char.char_id) }}" class="operator-img"
+                        <img src="{{ get_avatar(char.char_id, char.skin) }}" class="operator-img"
                             title="{{ char.static.name }}">
                         <span>
                             <img src="{{ get_image('characters', char.skin) }}">
@@ -190,9 +191,9 @@
                 {% endif %}
                 <br>
 
-                trust {{ char.favor_point.trust }}% ({{ char.favor_point }})
+                trust {{ char.trust }}% ({{ char.favor_point }})
 
-		
+
                 {{ voice_langs[char.voice_lan].name }}
                 <br>
 
@@ -219,8 +220,10 @@
                 {% endfor %}
 
                 {% if char.current_equip and "001" not in char.current_equip %}
-                <img src="{{ get_image('equip/icon', char.current_equip) }}">
-                module LV{{ char.equip[char.current_equip].level }}
+                {% set module = gamedata.uniequip_table["equipDict"][char.current_equip] %}
+                {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
+                <img src="{{ get_image('equip/type', module_name.lower()) }}" style="filter:invert(1)">
+                {{ module_name }} L{{ char.equip[char.current_equip].level }}
                 {% endif %}
 
                 <hr>

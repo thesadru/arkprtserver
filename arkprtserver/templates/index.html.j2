@@ -32,51 +32,19 @@
     </div>
 
     <br>
-    <br>
-    <hr>
-    <hr>
 
-    <div>
-        <div style="color: red">
-        arkprts is currently experiencing diffculties with login, we apologize for the inconvencience.
-        Please contant the developer on discord for further debugging/questions.
-        </div>
-        <p>ArkPRTS is a website for fetching both public and private data from Arknights.</p>
-        <p>Looking for public data? Try searching for a username or user ID.
-            (<a href="/search?nickname=Yii">example</a>)</p>
-        <p>Wish to view all of your arknights operators? Try logging in.</p>
-        <p>Trying to export your data to Krooster? Login and click the "Export to Krooster" button.</p>
-        <p>Wish to ask more questions? Contact me on discord! (
-            <a href="https://discord.com/users/454513969265115137">ashlen</a> on
-            <a href="https://discord.gg/sMkSKRPuCR">my discord server</a> or
-            <a href="https://discord.gg/arknights">the arknights server</a> )
-        </p>
-
-        <hr>
-        <p>
-            <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/xYztdxcjSOM"
-                title="YouTube video player" frameborder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen></iframe>
-        <ol>
-            <li>visit <a href="/user">https://arkprts.ashlen.gay/user</a></li>
-            <li>enter your email and wait for a code</li>
-            <li>enter the code sent to your email and login</li>
-            <li>click on export to krooster</li>
-            <li>open krooster</li>
-            <li>open inspect element and go to Application (may need to click the ribbon)</li>
-            <li>open local storage and select krooster.com</li>
-            <li>replace the operators fields with your copied data</li>
-            <li>reload the page, ideally force-sync your data if it's not visible publicly</li>
-            <p>Wish to also export your inventory?</p>
-            <li>click on export items to krooster</li>
-            <li>go to the planner</li>
-            <li>import data as csv</li>
-            <li>if disabled, show inactive materials to view your inventory</li>
-        </ol>
-        </p>
+    <div id="news" class="simple-border" style="text-align: center;">
+        <h1>Arknights announcements</h1>
+        {% for announcement in announcements["announceList"] %}
+        <iframe src="{{announcement[" webUrl"]}}" title="description" width="780" height="450"></iframe>
+        {% endfor %}
     </div>
-
 </body>
+
+
+<footer>
+    <a href="/about">About</a>
+    <a href="https://stats.uptimerobot.com/kx4NEuYYZ7">Uptime</a>
+    <footer>
 
 </html>

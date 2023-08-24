@@ -54,9 +54,10 @@
         <div id="{{ user.uid }}">
             {# TODO: Support default and event avatars #}
             <span class="hoverable">
-                {% set sec = gamedata.get_operator(user.secretary) %}
+                {% set sec = gamedata.get_operator(user.secretary or 'char_002_amiya') %}
                 <a class="thumb" href="https://arknights.fandom.com/wiki/{{ sec.name.replace(' ', '_') }}">
-                    <img src="{{ get_image('avatars', user.secretary) }}" class="avatar-img" title="{{ sec.name }}">
+                    <img src="{{ get_avatar(user.secretary, user.secretary_skin_id) }}" class="avatar-img"
+                        title="{{ sec.name }}">
                     <span>
                         <img src="{{ get_image('characters', user.secretary_skin_id) }}">
                     </span>
@@ -66,13 +67,14 @@
                 <div class="title">
                     LV{{ user.level }}
                     <b>{{ user.nickname }}#{{ user.nick_number }}</b> -
-                    {{ user.uid }} ({{user.server_name }})
+                    {{ user.uid }} {# ({{user.server_name }}) #}
                 </div>
                 <i>{{ user.resume }}</i>
             </div>
             <div class="clear-both">
                 Playing since: {{ user.register_ts.strftime("%Y-%m-%d") }}<br>
-                Last online: {{ user.last_online_time.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC") }}<br>
+                Last online: {{ user.last_online_time.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S
+                UTC") }}<br>
                 {% if user.main_stage_progress %}
                 {% set stage = gamedata.stage_table.stages[user.main_stage_progress] %}
                 Current stage: {{ stage.code }} ({{ stage.name }})<br>
@@ -84,80 +86,86 @@
             </div>
             <br>
             <div>
-                Support units:
-                <!-- skipping all 1*/2* skill-less operators cause I don't wanna deal with that -->
-                {% for support in user.assist_char_list|reject("none")|rejectattr("skill_index", "eq", -1) %}
-                <div class="clear-both">
-                    <span class="hoverable">
-                        <a class="thumb"
-                            href="https://arknights.fandom.com/wiki/{{ support.static.name.replace(' ', '_') }}">
-                            {# aceship only exports char_id or skin_id if not default #}
-                            <img src="{{ get_image('avatars', support.char_id if '@' not in support.skin_id and support.skin_id.endswith('#1') else support.skin_id) }}" class="operator-img"
-                                title="{{ support.static.name }}">
-                            <span>
-                                <img src="{{ get_image('characters', support.skin_id) }}">
-                            </span>
-                        </a>
-                    </span>
+                <div>
+                    Support units:
+                    <!-- skipping all 1*/2* skill-less operators cause I don't wanna deal with that -->
+                    {% for support in user.assist_char_list|reject("none")|rejectattr("skill_index", "eq", -1) %}
+                    <div class="clear-both">
+                        <span class="hoverable">
+                            <a class="thumb"
+                                href="https://arknights.fandom.com/wiki/{{ support.static.name.replace(' ', '_') }}">
+                                <img src="{{ get_avatar(support.char_id, support.skin_id) }}" class="operator-img"
+                                    title="{{ support.static.name }}">
+                                <span>
+                                    <img src="{{ get_image('characters', support.skin_id) }}">
+                                </span>
+                            </a>
+                        </span>
 
-                    {% if support.potential_rank %}
-                    <img src="{{ get_image('ui/potential', support.potential_rank + 1) }}"
-                        title="Potential {{ support.potential_rank + 1 }}">
-                    {% endif %}
+                        {% if support.potential_rank %}
+                        <img src="{{ get_image('ui/potential', support.potential_rank + 1) }}"
+                            title="Potential {{ support.potential_rank + 1 }}">
+                        {% endif %}
 
-                    <b>{{ support.static.name }}</b>
-                    ({{ tierlist.get(support.char_id).tier }})
+                        <b>{{ support.static.name }}</b>
+                        ({{ tierlist.get(support.char_id).tier }})
 
-                    <img src="{{ get_image('ui/elite', support.evolve_phase) }}"
-                        title="Elite {{ support.evolve_phase }}">
-                    E{{ support.evolve_phase }}L{{ support.level }}
+                        <img src="{{ get_image('ui/elite', support.evolve_phase) }}"
+                            title="Elite {{ support.evolve_phase }}">
+                        E{{ support.evolve_phase }}L{{ support.level }}
 
-                    {% set skill = support.skills[support.skill_index] %}
-                    <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
-                        title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
-                    S{{ support.skill_index+1 }}M{{ skill.specialize_level }}
-
-                    <br>
-
-                    trust {{ support.trust }}% ({{ support.favor_point }})
-
-                    skills LV{{ support.main_skill_lvl }}
-                    {% for skill in support.skills %}
-                    <span class="relative">
+                        {% set skill = support.skills[support.skill_index] %}
                         <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
                             title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
-                        {% if skill.specialize_level > 0 %}
-                        <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}" class="mastery-img"
-                            title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
+                        S{{ support.skill_index+1 }}M{{ skill.specialize_level }}
+
+                        <br>
+
+                        trust {{ support.trust }}% ({{ support.favor_point }})
+
+                        skills LV{{ support.main_skill_lvl }}
+                        {% for skill in support.skills %}
+                        <span class="relative">
+                            <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                                title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
+                            {% if skill.specialize_level > 0 %}
+                            <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}"
+                                class="mastery-img"
+                                title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
+                            {% endif %}
+                            {# {{skill.static.levels[support.main_skill_lvl-1].name}} #}
+                        </span>
+                        {% endfor %}
+
+                        {% if support.current_equip and "001" not in support.current_equip %}
+                        {% set module = gamedata.uniequip_table["equipDict"][support.current_equip] %}
+                        {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <img src="{{ get_image('equip/type', module_name.lower()) }}" style="filter:invert(1)">
+                        {{ module_name }} L{{ support.equip[support.current_equip].level }}
                         {% endif %}
-                        {# {{skill.static.levels[support.main_skill_lvl-1].name}} #}
-                    </span>
+
+                        <br>
+                    </div>
                     {% endfor %}
-
-                    {% if support.current_equip and "001" not in support.current_equip %}
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    <img src="{{ get_image('equip/icon', support.current_equip) }}">
-                    module L{{ support.equip[support.current_equip].level }}
-                    {% endif %}
-
-                    <br>
                 </div>
-                {% endfor %}
-            </div>
-            <br>
-            <div>
-                Teams:
-                {% for team, amount in user.team_v2.items() %}
-                <span>
-                    <img src="{{ get_image('factions', 'logo_' + team) }}" style="filter:invert(1)"
-                        title="{{ gamedata.handbook_team_table[team].power_name }}">
-                    <b>{{amount}}</b>
-                </span>
-                {% endfor %}
+                <br>
+                <div>
+                    Teams:
+                    <div style="display: grid; grid-template-columns: repeat(12, 1fr); width: fit-content">
+                        {% for team, amount in user.team_v2.items() %}
+                        <span>
+                            <img src="{{ get_image('factions', 'logo_' + team) }}" style="filter:invert(1)"
+                                title="{{ gamedata.handbook_team_table[team].power_name }}">
+                            <b>{{amount}}</b>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
             <hr>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
 </body>
 

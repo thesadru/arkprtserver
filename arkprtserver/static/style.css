@@ -106,13 +106,11 @@ h4>img {
     height: 512px;
 }
 
-
 /* black border makes it easy to separate, just use <hr> between items */
 .simple-border {
     border: 1px solid black;
     padding: 10px;
 }
-
 
 /* these are always placed in front of text */
 .avatar-img {
@@ -141,7 +139,6 @@ h4>img {
 .title {
     font-size: 40px;
 }
-
 
 /* TODO: I don't think these should require classes */
 .relative {
