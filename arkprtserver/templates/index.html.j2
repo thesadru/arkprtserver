@@ -36,7 +36,7 @@
     <div id="news" class="simple-border" style="text-align: center;">
         <h1>Arknights announcements</h1>
         {% for announcement in announcements["announceList"] %}
-        <iframe src="{{announcement[" webUrl"]}}" title="description" width="780" height="450"></iframe>
+        <iframe src="{{announcement['webUrl']}}" title="description" width="780" height="450"></iframe>
         {% endfor %}
     </div>
 </body>
