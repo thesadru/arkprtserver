@@ -35,8 +35,11 @@
 
     <div id="news" class="simple-border" style="text-align: center;">
         <h1>Arknights announcements</h1>
+        {% if preannouncement and preannouncement.actived %}
+        <iframe src="{{preannouncement['preAnnounceUrl']}}" title="Pre-announcement" width="1560" height="450"></iframe>
+        {% endif %}
         {% for announcement in announcements["announceList"] %}
-        <iframe src="{{announcement['webUrl']}}" title="description" width="780" height="450"></iframe>
+        <iframe src="{{announcement['webUrl']}}" title="{{announcement['title']}}" width="780" height="450"></iframe>
         {% endfor %}
     </div>
 </body>

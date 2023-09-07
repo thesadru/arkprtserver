@@ -95,6 +95,7 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
     """Load gamedata."""
     await client.update_gamedata()
     env.globals["announcements"] = await client.network.request("an")
+    env.globals["preannouncement"] = await client.network.request("prean")
     env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
 
 

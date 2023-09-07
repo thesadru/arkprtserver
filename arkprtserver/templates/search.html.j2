@@ -28,7 +28,7 @@ Support units:
 {% for support in user.assist_char_list|reject('none')|rejectattr('skill_index', 'eq', -1) 
 %}{% set skill = support.skills[support.skill_index] 
 %}{{support.static.name}} - E{{ support.evolve_phase }}L{{ support.level 
-}}{% if support.potential_rank %} Pot{{ support.potential_rank + 1}} {% endif 
+}}{% if support.potential_rank %} P{{ support.potential_rank + 1}}{% endif 
 %} S{{ support.skill_index+1 }}M{{ skill.specialize_level }}{% if support.skills|sum(attribute='specialize_level') > skill.specialize_level
 %} (M{{ support.skills|sum(attribute='specialize_level') }}){% endif 
 %}{% if support.current_equip and '001' not in support.current_equip 
