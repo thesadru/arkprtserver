@@ -7,7 +7,7 @@ import typing
 
 import nox
 
-nox.options.sessions = ["reformat", "lint", "type-check", "prettier"]
+nox.options.sessions = ["reformat", "lint", "type-check"]
 nox.options.reuse_existing_virtualenvs = True
 PACKAGE = "arkprtserver"
 GENERAL_TARGETS = ["./arkprtserver", "./noxfile.py"]
@@ -71,16 +71,3 @@ def verify_types(session: nox.Session) -> None:
     install_requirements(session, "typecheck")
 
     session.run("pyright", "--verifytypes", PACKAGE, "--ignoreexternal", *verbose_args(), env=PYRIGHT_ENV)
-
-
-def _try_install_prettier(session: nox.Session) -> bool:
-    """Try to install prettier. Return False if failed."""
-    try:
-        session.run("npm", "install", "prettier", "--global", external=True)
-    except Exception as exception:  # noqa: BLE001: Nox throws a bare Exception
-        if str(exception) != "Program npm not found":
-            raise
-    else:
-        return True
-
-    return False

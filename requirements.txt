@@ -1,6 +1,5 @@
-aiohttp~=3.8.4
-aiohttp_jinja2~=1.5.1
-arkprts==0.2.6
+aiohttp[speedups]~=3.8.5
+arkprts[all]==0.3.2
 beautifulsoup4~=4.12.2
 
 python-dotenv~=1.0.0

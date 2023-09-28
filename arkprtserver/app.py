@@ -23,7 +23,7 @@ app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
 env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
-client = arkprts.Client(server="en", gamedata=os.environ.get("GAMEDATA"))
+client = arkprts.Client(server="en", assets=os.environ.get("GAMEDATA"))
 
 LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 
@@ -56,7 +56,7 @@ async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
     operators = await gamepress.get_gamepress_tierlist()
 
     operator_names = {
-        operator.name: id for id, operator in client.gamedata.character_table.items() if id.startswith("char_")
+        operator.name: id for id, operator in client.assets.character_table.items() if id.startswith("char_")
     }
 
     for operator in operators:
@@ -76,7 +76,7 @@ env_globals = dict(
     get_avatar=get_avatar,
     export=export,
     client=client,
-    gamedata=client.gamedata,
+    gamedata=client.assets,
     datetime=datetime,
 )
 env.globals.update(env_globals)  # type: ignore
@@ -93,10 +93,12 @@ app.on_startup.append(startup)
 
 async def startup_gamedata(app: aiohttp.web.Application) -> None:
     """Load gamedata."""
-    await client.update_gamedata()
-    env.globals["announcements"] = await client.network.request("an")
-    env.globals["preannouncement"] = await client.network.request("prean")
+    await client.update_assets()
+    env.globals["announcements"] = await client.network.request("an")  # type: ignore
+    env.globals["preannouncement"] = await client.network.request("prean")  # type: ignore
     env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
+
+    LOGGER.info("Startup finished.")
 
 
 @aiohttp.web.middleware
@@ -105,7 +107,7 @@ async def startup_middleware(
     handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
 ) -> aiohttp.web.StreamResponse:
     """Startup middleware."""
-    if not client.gamedata.loaded:
+    if not client.assets.loaded:
         template = env.get_template("startup.html.j2")
         return aiohttp.web.Response(text=template.render(request=request), content_type="text/html")
 
@@ -210,7 +212,7 @@ async def authorize(request: aiohttp.web.Request) -> typing.Union[arkprts.Client
         response.del_cookie("server")
         return response
 
-    return arkprts.Client(auth=auth, gamedata=client.gamedata)
+    return arkprts.Client(auth=auth, assets=client.assets)
 
 
 @routes.get("/user")

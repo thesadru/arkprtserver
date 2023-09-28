@@ -1,5 +1,6 @@
 """Parsing gamepress data. Not in-game data."""
 import typing
+import warnings
 
 import bs4
 import pydantic
@@ -98,14 +99,20 @@ def parse_raw_tierlist(text: str) -> typing.Any:
                 explanation = list(tier_cell.find(class_="tier-expl-container").children)[1].string.strip()
 
                 raw_explanations = " ".join(explanation.split()).replace("<br >", "<br>").split("<br>")
-                explanations = [bs4.BeautifulSoup(i, "html.parser").text.strip() for i in raw_explanations]
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        "ignore",
+                        message="The input looks more like a filename than markup. "
+                        "You may want to open this file and pass the filehandle into Beautiful Soup.",
+                    )
+                    explanations = [bs4.BeautifulSoup(i, "html.parser").text.strip() for i in raw_explanations]
                 # sometimes the period is on the start of the next line
                 explanations = [i.lstrip(". ") for i in explanations if i]
 
                 explanation_tagged = {"=": "summary", "+": "positive", "-": "negative"}
                 for line in explanations:
                     explanation_tag = explanation_tagged.get(line[0], "summary")  # type: ignore
-                    operator["explanation"][explanation_tag].append(line.lstrip("+-= "))
+                    operator["explanation"][explanation_tag].append(line.lstrip("+-= "))  # type: ignore
 
                 tier["operators"].append(operator)  # type: ignore
 
