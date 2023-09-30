@@ -93,10 +93,16 @@ app.on_startup.append(startup)
 
 async def startup_gamedata(app: aiohttp.web.Application) -> None:
     """Load gamedata."""
-    await client.update_assets()
+    if isinstance(client.assets, arkprts.BundleAssets):
+        await asyncio.gather(*[client.assets.update_assets(server=server) for server in ("en", "jp", "kr", "cn")])
+    else:
+        await client.assets.update_assets()
+
     env.globals["announcements"] = await client.network.request("an")  # type: ignore
     env.globals["preannouncement"] = await client.network.request("prean")  # type: ignore
     env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
+
+    app.update(env.globals)  # type: ignore
 
     LOGGER.info("Startup finished.")
 
@@ -243,6 +249,10 @@ async def optimize(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
 app.router.add_static("/static", "arkprtserver/static", name="static")
 app.add_routes(routes)
+
+from .api import api_routes  # noqa: E402
+
+app.add_routes(api_routes)
 
 
 def entrypoint(argv: list[str] = sys.argv) -> aiohttp.web.Application:
