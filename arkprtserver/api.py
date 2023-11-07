@@ -22,12 +22,14 @@ def format_blackboard(string: str, blackboard: typing.Mapping[str, object]) -> s
     def replacer(match: re.Match[str]) -> str:
         key, frm = match[1], match[2]
         value = str(blackboard.get(key, "0"))
+        if value.replace(".", "").isnumeric() and float(value).is_integer():
+            value = str(int(float(value)))
         if frm and "%" in frm:
             value = str(round(float(value) * 100)) + "%"
 
         return value
 
-    string = re.sub(r"{(.+?)(?:\:(.+))?}", replacer, string)
+    string = re.sub(r"{(.+?)(?:\:(.+?))?}", replacer, string)
     return re.sub(r"<([@$].+?|/)>", "", string)
 
 
@@ -50,9 +52,6 @@ async def search_raw(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse
     data = await client.get_raw_friend_info([uid["uid"] for uid in uid_data["result"]], server=server)
     users = data["friends"]
 
-    if request.query.get("all") not in ("1", "true"):
-        users = [user for user in users if user.level >= 10]
-
     return aiohttp.web.json_response(users)
 
 
@@ -67,7 +66,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
         return aiohttp.web.json_response({"message": "Unsupported server"}, status=400)
 
     lang = request.query.get("lang", server)
-    if lang not in ("en", "jp", "kr", "cn", "tw"):
+    if lang not in ("en", "jp", "kr", "cn"):
         return aiohttp.web.json_response({"message": "Unsupported language"}, status=400)
 
     nickname, nicknumber = request.query.get("nickname"), request.query.get("nicknumber", "")
@@ -127,13 +126,15 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 "PIONEER": "Vanguard",
             }[char_data.profession]
 
+            team = client.assets.get_excel("handbook_team_table", server=lang)
             support: typing.Any = {
                 "id": char.char_id,
                 "name": char_data.name,
-                "nation": char_data.nationId,
+                "nation": team[char_data.nation_id].power_name if char_data.get("nation_id") else None,
+                "team": team[char_data.team_id].power_name if char_data.get("team_id") else None,
                 "number": char_data.display_number,
                 "tags": list(char_data.tag_list),
-                "rarity": char_data.rarity + 1,
+                "rarity": char_data.rarity[-1],
                 "class": {
                     "id": char_data.profession,
                     "name": en_class_name,
@@ -167,23 +168,26 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                     "selected": char.current_equip,
                     "modules": [],
                 },
+                "talents": [],
             }
 
             for index, skill in enumerate(char.skills):
                 lv = char.main_skill_lvl + skill.specialize_level - 1
-                skill_data = client.assets.get_skill(skill.skill_id, server=lang)["levels"][lv]
+                skill_data = client.assets.get_excel("skill_table", server=lang)[skill.skill_id]["levels"][lv]
                 skill = {
                     "id": skill.skill_id,
                     "name": skill_data.name,
-                    "description": format_blackboard(
-                        skill_data.description,
-                        {b["key"]: b["value"] for b in skill_data.blackboard},
-                    ),
+                    "description": format_blackboard(skill_data.description, skill_data.blackboard),
                     "sp": {
+                        "type": skill_data.sp_data.sp_type,
                         "cost": skill_data.sp_data.sp_cost,
                         "initial": skill_data.sp_data.init_sp,
+                        "charges": skill_data.sp_data.max_charge_time,
                     },
-                    "asset": app_module.get_image("skills", "skill_icon_" + (skill.static.icon_id or skill.skill_id)),
+                    "asset": app_module.get_image(
+                        "skills",
+                        "skill_icon_" + (skill.static.get("icon_id") or skill.skill_id),
+                    ),
                     "unlocked": skill.unlock,
                     "level": char.main_skill_lvl,
                     "mastery": skill.specialize_level,
@@ -199,7 +203,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                     "type": {
                         "name": module_data.type_icon.upper(),
                         "name1": module_data.type_name1,
-                        "name2": module_data.type_name2,
+                        "name2": module_data.get("type_name2"),
                         "asset": app_module.get_image("equip/type", module_data.type_icon),
                     },
                     "asset": app_module.get_image("equip/icon", module_id),
@@ -208,6 +212,29 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                     "selected": module_id == char.current_equip,
                 }
                 support["modules"]["modules"].append(module)
+
+            for talent_c in char_data.talents:
+                candidate = next(
+                    (
+                        candidate
+                        for candidate in reversed(talent_c.candidates)
+                        if candidate.required_potential_rank <= char.potential_rank
+                        and int(candidate.unlock_condition.phase[-1]) <= char.evolve_phase
+                    ),
+                    None,
+                )
+                if candidate is None:
+                    continue
+
+                talent = {
+                    "name": candidate.name,
+                    "description": format_blackboard(candidate.description, candidate.blackboard),
+                    "requirements": {
+                        "elite": int(candidate.unlock_condition.phase[-1]),
+                        "potential": candidate.required_potential_rank,
+                    },
+                }
+                support["talents"].append(talent)
 
             user_data["supports"].append(support)
 
@@ -218,7 +245,10 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 "medals": [],
             }
             for medal in user.medal_board.custom.layout:
-                static_medal = client.assets.get_medal(medal.id, server=lang)
+                # static_medal = client.assets.get_medal(medal.id, server=lang)
+                static_medal = next(
+                    m for m in client.assets.get_excel("medal_table", server=lang).medal_list if m.medal_id == medal.id
+                )
                 user_data["medals"]["medals"].append(
                     {
                         "id": medal.id,
@@ -226,11 +256,16 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                         "asset": app_module.get_image("ui/medalicon", medal.id),
                         "name": static_medal.medal_name,
                         "description": static_medal.description,
-                        "method": static_medal.get_method,
+                        "method": static_medal.get("get_method"),
                     },
                 )
         elif user.medal_board.template:
-            medal_group = client.assets.get_medal_group(user.medal_board.template.group_id, server=lang)
+            medal_group = next(
+                medal_group
+                for groups in client.assets.get_excel("medal_table", server=lang).medal_type_data.values()
+                for medal_group in groups.group_data
+                if medal_group.group_id == user.medal_board.template.group_id
+            )
             user_data["medals"] = {
                 "type": user.medal_board.type,
                 "template": {
@@ -242,7 +277,9 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 "medals": [],
             }
             for medal in user.medal_board.template.medal_list:
-                static_medal = client.assets.get_medal(medal, server=lang)
+                static_medal = next(
+                    m for m in client.assets.get_excel("medal_table", server=lang).medal_list if m.medal_id == medal
+                )
                 user_data["medals"]["medals"].append(
                     {
                         "id": medal,
@@ -250,7 +287,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                         "asset": app_module.get_image("ui/medalicon", medal),
                         "name": static_medal.medal_name,
                         "description": static_medal.description,
-                        "method": static_medal.get_method,
+                        "method": static_medal.get("get_method"),
                     },
                 )
         else:

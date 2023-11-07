@@ -46,7 +46,7 @@ def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
             "id": char.char_id,
             "name": char.static.name,
             "favorite": char.star_mark,
-            "rarity": char.static.rarity + 1,
+            "rarity": int(char.static.rarity[-1]),
             "class": {
                 "WARRIOR": "Guard",
                 "SNIPER": "Sniper",

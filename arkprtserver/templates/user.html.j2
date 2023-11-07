@@ -182,7 +182,6 @@
                 {% endif %}
 
                 <b style="color:{{ 'gold' if char.star_mark else 'auto' }}">{{ char.static.name }}</b>
-                ({{ tierlist.get(char.char_id).tier }})
 
                 <img src="{{ get_image('ui/elite', char.evolve_phase) }}" title="Elite {{ char.evolve_phase }}">
                 E{{ char.evolve_phase }}L{{ char.level }}

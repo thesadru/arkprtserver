@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import sys
+import traceback
 import typing
 import urllib.parse
 
@@ -13,7 +14,7 @@ import arkprts
 import dotenv
 import jinja2
 
-from . import export, gamepress
+from . import export
 
 __all__ = ("app",)
 
@@ -23,7 +24,7 @@ app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
 env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
-client = arkprts.Client(server="en", assets=os.environ.get("GAMEDATA"))
+client = arkprts.Client(server="en", assets=arkprts.BundleAssets(os.environ.get("GAMEDATA")))
 
 LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 
@@ -49,26 +50,6 @@ def get_avatar(char_id: str, skin_id: str) -> str:
         skin_id = char_id
 
     return get_image("avatars", skin_id)
-
-
-async def get_gamepress_tierlist() -> dict[str, gamepress.GamepressOperator]:
-    """Get gamepress tierlist."""
-    operators = await gamepress.get_gamepress_tierlist()
-
-    operator_names = {
-        operator.name: id for id, operator in client.assets.character_table.items() if id.startswith("char_")
-    }
-
-    for operator in operators:
-        # I'm not handling this, too annoying
-        if operator.name == "Amiya (Guard)":
-            continue
-        if operator.name == "Rosa (Poca)":
-            operator.name = "Rosa"
-
-        operator.operator_id = operator_names.get(operator.name, operator.name)
-
-    return {operator.operator_id: operator for operator in operators if operator.operator_id}
 
 
 env_globals = dict(
@@ -100,7 +81,6 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
 
     env.globals["announcements"] = await client.network.request("an")  # type: ignore
     env.globals["preannouncement"] = await client.network.request("prean")  # type: ignore
-    env.globals["tierlist"] = await get_gamepress_tierlist()  # type: ignore
 
     app.update(env.globals)  # type: ignore
 
@@ -120,7 +100,34 @@ async def startup_middleware(
     return await handler(request)
 
 
+@aiohttp.web.middleware
+async def error_middleware(
+    request: aiohttp.web.Request,
+    handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
+) -> aiohttp.web.StreamResponse:
+    """Error middleware."""
+    try:
+        return await handler(request)
+    except aiohttp.web.HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        traceback.print_exc()
+        template = env.get_template("error.html.j2")
+        return aiohttp.web.Response(
+            text=template.render(request=request, exception=e),
+            content_type="text/html",
+            status=getattr(e, "status_code", 500),
+        )
+
+
+async def on_shutdown(app: aiohttp.web.Application) -> None:
+    """Shutdown client."""
+    await client.network.close()
+
+
 app.middlewares.append(startup_middleware)
+app.middlewares.append(error_middleware)
+app.on_shutdown.append(on_shutdown)
 
 
 @routes.get("/")
@@ -234,19 +241,6 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
     return aiohttp.web.Response(text=template.render(user=user, request=request), content_type="text/html")
 
 
-@routes.get("/optimize")
-async def optimize(request: aiohttp.web.Request) -> aiohttp.web.Response:
-    """Optimize."""
-    user_client = await authorize(request)
-    if isinstance(user_client, aiohttp.web.Response):
-        return user_client
-
-    user = await user_client.get_data()
-
-    template = env.get_template("optimize.html.j2")
-    return aiohttp.web.Response(text=template.render(user=user, request=request), content_type="text/html")
-
-
 app.router.add_static("/static", "arkprtserver/static", name="static")
 app.add_routes(routes)
 
@@ -258,3 +252,11 @@ app.add_routes(api_routes)
 def entrypoint(argv: list[str] = sys.argv) -> aiohttp.web.Application:
     """Return app as dummy aiohttp entrypoint."""
     return app
+
+
+handler = logging.StreamHandler()
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
+logger.info("Starting with logging!")
