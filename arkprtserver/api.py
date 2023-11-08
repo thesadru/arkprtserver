@@ -255,7 +255,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                         "pos": medal.pos,
                         "asset": app_module.get_image("ui/medalicon", medal.id),
                         "name": static_medal.medal_name,
-                        "description": static_medal.description,
+                        "description": static_medal.get("description"),
                         "method": static_medal.get("get_method"),
                     },
                 )
@@ -286,7 +286,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                         "pos": None,
                         "asset": app_module.get_image("ui/medalicon", medal),
                         "name": static_medal.medal_name,
-                        "description": static_medal.description,
+                        "description": static_medal.get("description"),
                         "method": static_medal.get("get_method"),
                     },
                 )
