@@ -165,7 +165,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 "level": char.level,
                 "contingency": dict(char.crisis_record),
                 "modules": {
-                    "selected": char.current_equip,
+                    "selected": list(char.equip.keys()).index(char.current_equip) if char.current_equip else None,
                     "modules": [],
                 },
                 "talents": [],
@@ -310,14 +310,17 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
             user_data["progression"] = {"id": None, "code": None, "name": None, "description": None, "level": None}
 
         assistant = client.assets.get_operator(user.secretary, server=lang)
-        user_data["assistant"] = {
-            "id": user.secretary,
-            "name": assistant.name,
-            "skin": {
-                "id": user.secretary_skin_id,
-                "asset": app_module.get_avatar(user.secretary, user.secretary_skin_id),
-            },
-        }
+        if assistant:  # null for new accounts
+            user_data["assistant"] = {
+                "id": user.secretary,
+                "name": assistant.name,
+                "skin": {
+                    "id": user.secretary_skin_id,
+                    "asset": app_module.get_avatar(user.secretary, user.secretary_skin_id),
+                },
+            }
+        else:
+            user_data["assistant"] = {"id": None, "name": None, "skin": {"id": None, "asset": None}}
 
         user_data["factions"] = []
         for team, count in user.team_v2.items():
