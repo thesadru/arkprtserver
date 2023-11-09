@@ -200,6 +200,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 module = {
                     "id": module_id,
                     "name": module_data.uni_equip_name,
+                    "level": module.level,
                     "type": {
                         "name": module_data.type_icon.upper(),
                         "name1": module_data.type_name1,
