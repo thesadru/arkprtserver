@@ -84,7 +84,7 @@ Support units:
             {# TODO: Support default and event avatars #}
             <span class="hoverable">
                 {% set sec = gamedata.get_operator(user.secretary or 'char_002_amiya') %}
-                <a class="thumb" href="https://arknights.fandom.com/wiki/{{ sec.name.replace(' ', '_') }}">
+                <a class="thumb" href="https://arknights.wiki.gg/wiki/{{ sec.name.replace(' ', '_') }}">
                     <img src="{{ get_avatar(user.secretary, user.secretary_skin_id) }}" class="avatar-img"
                         title="{{ sec.name }}">
                     <span>
@@ -122,7 +122,7 @@ Support units:
                     <div class="clear-both">
                         <span class="hoverable">
                             <a class="thumb"
-                                href="https://arknights.fandom.com/wiki/{{ support.static.name.replace(' ', '_') }}">
+                                href="https://arknights.wiki.gg/wiki/{{ support.static.name.replace(' ', '_') }}">
                                 <img src="{{ get_avatar(support.char_id, support.skin_id) }}" class="operator-img"
                                     title="{{ support.static.name }}">
                                 <span>
