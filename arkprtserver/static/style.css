@@ -72,6 +72,16 @@ h4 > img {
     height: 16px;
 }
 
+#logo {
+    width: 30px;
+    height: max-content;
+}
+
+#search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 /* forms */
 #login {
     /* always float in top-right */

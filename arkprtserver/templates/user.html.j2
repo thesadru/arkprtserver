@@ -21,6 +21,7 @@
 
 <body>
     <div id="search">
+      <a href="/"><img id="logo" src="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png" /></a>
         <form action="/search" method="GET">
             <input type="text" name="nickname" placeholder="Search for player" required>
             <select name="server">
@@ -221,7 +222,7 @@
                 {% if char.current_equip and "001" not in char.current_equip %}
                 {% set module = gamedata.uniequip_table["equipDict"][char.current_equip] %}
                 {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
-                <img src="{{ get_image('equip/type', module_name.lower()) }}" style="filter:invert(1)">
+                <img src="{{ get_image('equip/type', module_name.lower()) }}">
                 {{ module_name }} L{{ char.equip[char.current_equip].level }}
                 {% endif %}
 

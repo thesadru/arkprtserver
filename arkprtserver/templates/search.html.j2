@@ -48,7 +48,7 @@ Support units:
       }
 
       main {
-        width: 60%;
+        width: 1000px;
         margin: auto;
       }
 
@@ -62,24 +62,27 @@ Support units:
 
 
 <body>
-  <main>
+  <head>
     <div id="search">
-        <form action="/search" method="GET">
-            {# the defaults should be based on the query parameters #}
-            {% set nickname = request.query.get("nickname", "") %}
-            {% set server = request.query.get("server", "en") %}
-            {% set all = request.query.get("all", "0") == "1" %}
-            <input type="text" name="nickname" placeholder="Search for player" value="{{ nickname }}" required>
-            <select name="server">
-                <option value="en" {{"selected" if server=="en" }}>EN</option>
-                <option value="jp" {{"selected" if server=="jp" }}>JP</option>
-                <option value="kr" {{"selected" if server=="kr" }}>KR</option>
-            </select>
-            <input type="checkbox" name="all" value="1" {{ 'checked' if all else '' }}>
-            <label for="all" style="font-size: 12px">Show all</label>
-            <input type="submit" value="Search">
-        </form>
+      <a href="/"><img id="logo" src="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png" /></a>
+      <form action="/search" method="GET">
+        {# the defaults should be based on the query parameters #}
+        {% set nickname = request.query.get("nickname", "") %}
+        {% set server = request.query.get("server", "en") %}
+        {% set all = request.query.get("all", "0") == "1" %}
+        <input type="text" name="nickname" placeholder="Search for player" value="{{ nickname }}" required>
+        <select name="server">
+          <option value="en" {{"selected" if server=="en" }}>EN</option>
+          <option value="jp" {{"selected" if server=="jp" }}>JP</option>
+          <option value="kr" {{"selected" if server=="kr" }}>KR</option>
+        </select>
+        <input type="checkbox" name="all" value="1" {{ 'checked' if all else '' }}>
+        <label for="all" style="font-size: 12px">Show all</label>
+        <input type="submit" value="Search">
+      </form>
     </div>
+  </head>
+  <main>
     <div id="login">
         <form method="GET" action="/user">
             <input type="submit" value="Login">
