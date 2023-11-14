@@ -37,19 +37,32 @@ Support units:
 {%endfor%}
     " />
     {% endif %}
+
+    <link rel="stylesheet" href="static/style.css">
+    <style>
+      body {
+        width: 100%;
+        max-width: unset;
+        min-width: unset;
+        margin: 0;
+      }
+
+      main {
+        width: 60%;
+        margin: auto;
+      }
+
+      @media only screen and (max-width: 1200px) {
+        main {
+          width: 95%;
+        }
+      }
+    </style>
 </head>
 
-<link rel="stylesheet" href="static/style.css">
-
-<style>
-    img {
-        height: 12px
-    }
-</style>
-
-<link rel="stylesheet" href="static/style.css">
 
 <body>
+  <main>
     <div id="search">
         <form action="/search" method="GET">
             {# the defaults should be based on the query parameters #}
@@ -64,7 +77,6 @@ Support units:
             </select>
             <input type="checkbox" name="all" value="1" {{ 'checked' if all else '' }}>
             <label for="all" style="font-size: 12px">Show all</label>
-            &nbsp;&nbsp;&nbsp;&nbsp;
             <input type="submit" value="Search">
         </form>
     </div>
@@ -75,130 +87,136 @@ Support units:
     </div>
 
     <br>
-    <div class="simple-border">
+    <div id="users">
         {% if not users %}
-        Please enter a nickname to search for (case-sensitive).
+        User not found. Please enter a nickname to search for (case-sensitive).
         {% endif %}
         {% for user in users %}
-        <div id="{{ user.uid }}">
+        <div class="user" id="{{ user.uid }}">
+          <img class="user-background" style="object-position: {{ 'top' if '#1' in user.secretary_skin_id and '@' not in user.secretary_skin_id else 'center' }};" src="{{ get_image('characters', user.secretary_skin_id) }}">
             {# TODO: Support default and event avatars #}
-            <span class="hoverable">
-                {% set sec = gamedata.get_operator(user.secretary or 'char_002_amiya') %}
-                <a class="thumb" href="https://arknights.fandom.com/wiki/{{ sec.name.replace(' ', '_') }}">
-                    <img src="{{ get_avatar(user.secretary, user.secretary_skin_id) }}" class="avatar-img"
-                        title="{{ sec.name }}">
-                    <span>
-                        <img src="{{ get_image('characters', user.secretary_skin_id) }}">
-                    </span>
-                </a>
-            </span>
-            <div>
-                <div class="title">
-                    LV{{ user.level }}
-                    <b>{{ user.nickname }}#{{ user.nick_number }}</b> -
-                    {{ user.uid }} {# ({{user.server_name }}) #}
+            <div class="user-body">
+              <div class="clear-both user-info">
+                <div class="user-header">
+                  <span class="avatar">
+                      {% set sec = gamedata.get_operator(user.secretary or 'char_002_amiya') %}
+                      <a class="thumb" href="https://arknights.wiki.gg/wiki/{{ sec.name.replace(' ', '_') }}">
+                          <img src="{{ get_avatar(user.secretary, user.secretary_skin_id) }}" class="avatar-img"
+                              title="{{ sec.name }}">
+                      </a>
+                  </span>
+                  <div>
+                    <h2>
+                          LV{{ user.level }}
+                          {{ user.nickname }}#{{ user.nick_number }}
+                    </h2>
+                    <i>{{ user.resume }}</i>
+                  </div>
                 </div>
-                <i>{{ user.resume }}</i>
-            </div>
-            <div class="clear-both">
-                Playing since: {{ user.register_ts.strftime("%Y-%m-%d") }}<br>
-                Last online: {{ user.last_online_time.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S
-                UTC") }}<br>
-                {% if user.main_stage_progress %}
-                {% set stage = gamedata.stage_table.stages[user.main_stage_progress] %}
-                Current stage: {{ stage.code }} ({{ stage.name }})<br>
-                {% else %}
-                Current stage: Completed<br>
-                {% endif %}
-                Characters: {{ user.char_cnt}}
-                Furniture: {{ user.furn_cnt }}
-            </div>
-            <br>
-            <div>
-                <div>
-                    Support units:
-                    <!-- skipping all 1*/2* skill-less operators cause I don't wanna deal with that -->
-                    {% for support in user.assist_char_list|reject("none")|rejectattr("skill_index", "eq", -1) %}
-                    <div class="clear-both">
-                        <span class="hoverable">
-                            <a class="thumb"
-                                href="https://arknights.fandom.com/wiki/{{ support.static.name.replace(' ', '_') }}">
-                                <img src="{{ get_avatar(support.char_id, support.skin_id) }}" class="operator-img"
-                                    title="{{ support.static.name }}">
-                                <span>
-                                    <img src="{{ get_image('characters', support.skin_id) }}">
-                                </span>
-                            </a>
-                        </span>
-
-                        {% if support.potential_rank %}
-                        <img src="{{ get_image('ui/potential', support.potential_rank + 1) }}"
-                            title="Potential {{ support.potential_rank + 1 }}">
-                        {% endif %}
-
-                        <b>{{ support.static.name }}</b>
-
-                        <img src="{{ get_image('ui/elite', support.evolve_phase) }}"
-                            title="Elite {{ support.evolve_phase }}">
-                        E{{ support.evolve_phase }}L{{ support.level }}
-
-                        {% set skill = support.skills[support.skill_index] %}
-                        <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
-                            title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
-                        S{{ support.skill_index+1 }}M{{ skill.specialize_level }}
-
-                        <br>
-
-                        trust {{ support.trust }}% ({{ support.favor_point }})
-
-                        skills LV{{ support.main_skill_lvl }}
-                        {% for skill in support.skills %}
-                        <span class="relative">
-                            <img src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
-                                title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
-                            {% if skill.specialize_level > 0 %}
-                            <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}"
-                                class="mastery-img"
-                                title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
-                            {% endif %}
-                            {# {{skill.static.levels[support.main_skill_lvl-1].name}} #}
-                        </span>
-                        {% endfor %}
-
-                        {% if support.current_equip and "001" not in support.current_equip %}
-                        {% set module = gamedata.uniequip_table["equipDict"][support.current_equip] %}
-                        {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
-                        &nbsp;&nbsp;&nbsp;&nbsp;
-                        <img src="{{ get_image('equip/type', module_name.lower()) }}" style="filter:invert(1)">
-                        {{ module_name }} L{{ support.equip[support.current_equip].level }}
-                        {% endif %}
-
-                        <br>
-                    </div>
-                    {% endfor %}
-                </div>
-                <br>
-                <div>
-                    Teams:
-                    <div style="display: grid; grid-template-columns: repeat(12, 1fr); width: fit-content">
+                  Playing since: {{ user.register_ts.strftime("%Y-%m-%d") }}<br>
+                  Last online: {{ user.last_online_time.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S
+                  UTC") }}<br>
+                  {% if user.main_stage_progress %}
+                    {% set stage = gamedata.stage_table.stages[user.main_stage_progress] %}
+                    Current stage: {{ stage.code }} ({{ stage.name }})<br>
+                    {% else %}
+                    Current stage: Completed<br>
+                  {% endif %}
+                  Characters: {{ user.char_cnt}}
+                  Furniture: {{ user.furn_cnt }} <br>
+                  ID: {{ user.uid }}
+                  {# <details>
+                    <summary>Teams</summary>
+                    <div>
                         {% for team, amount in user.team_v2.items() %}
                         <span>
-                            <img src="{{ get_image('factions', 'logo_' + team) }}" style="filter:invert(1)"
+                            <img src="{{ get_image('factions', 'logo_' + team) }}"
                                 title="{{ gamedata.handbook_team_table[team].power_name }}">
                             <b>{{amount}}</b>
                         </span>
                         {% endfor %}
                     </div>
+                  </details>
+                  #}
+              </div>
+              <div>
+                  <div class="user-supports">
+                      <!-- skipping all 1*/2* skill-less operators cause I don't wanna deal with that -->
+                      {% for support in user.assist_char_list|reject("none")|rejectattr("skill_index", "eq", -1) %}
+                      <div class="support-operator">
+                          {% set skill = support.skills[support.skill_index] %}
+                          <span>
+                              <a class="support-portrait-anchor"
+                                  href="https://arknights.wiki.gg/wiki/{{ support.static.name.replace(' ', '_') }}">
+                                  <img src="{{ get_image('portrait', support.skin_id, True) }}" class="support-portrait"
+                                      title="{{ support.static.name }}">
+                                <span class="support-portrait-text">
+                                  {% if support.potential_rank %}
+                                    <img src="{{ get_image('ui/potential', support.potential_rank + 1) }}"
+                                        title="Potential {{ support.potential_rank + 1 }}">
+                                  {% endif %}
+
+
+                                  <span>
+                                    <img src="{{ get_image('ui/elite', support.evolve_phase) }}"
+                                        title="Elite {{ support.evolve_phase }}">
+                                    LV{{ support.level }}
+                                  </span>
+                                </span>
+                                <span class="portrait-skill">
+                                  <img class="on-portrait-skill" src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                                      title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
+                                  {% if skill.specialize_level > 0 %}
+                                  <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}"
+                                      class="mastery-img"
+                                      title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
+                                  {% endif %}
+                                </span>
+                              </a>
+                          </span>
+                          <div class="support-info">
+
+
+                          <span class="support-other-skill-container">
+                          {% for skill in support.skills %}
+                            <span class="relative support-other-skills">
+                                <img class="other-skill-icon" src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                                    title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
+                                {% if skill.specialize_level > 0 %}
+                                <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}"
+                                    class="mastery-img"
+                                    title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }} M{{ skill.specialize_level }}">
+                                {% endif %}
+                                {# {{skill.static.levels[support.main_skill_lvl-1].name}} #}
+                            </span>
+                          {% endfor %}
+                          </span>
+                          {% if support.current_equip and "001" not in support.current_equip %}
+                            {% set module = gamedata.uniequip_table["equipDict"][support.current_equip] %}
+                            {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
+                            <span class="support-module">
+                              <img src="{{ get_image('equip/type', module_name.lower()) }}" />
+                              {{ module_name }} {{ support.equip[support.current_equip].level }}
+                            </span>
+                          {% endif %}
+
+                          {% if support.main_skill_lvl < 7 %}
+                            Skills LV{{ support.main_skill_lvl }}
+                          {% endif %}
+                          </div>
+                      </div>
+                      {% endfor %}
+                  </div>
                 </div>
             </div>
-            <hr>
         </div>
         {% endfor %}
     </div>
+  </main>
+    <footer>
+        Made with ArkPRTS
+    </footer>
 </body>
 
-<footer>
-    Made with ArkPRTS
-</footer>
 
 </html>

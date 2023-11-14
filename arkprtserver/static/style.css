@@ -5,31 +5,32 @@ body {
     width: fit-content;
     max-width: 90%;
     min-width: 50%;
-    background: #f2f2f2;
-    color: #404040;
+    background: #141516;
+    color: #ccc;
     /* Novocento and Noto is used by Arknights in-game */
     font-family: "Novocento Sans", "Noto Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     position: relative;
 }
 
+h1, h2, h3, h4 {
+  color: #eee;
+  margin: 0;
+}
+
 h1 {
-    font-size: 60px;
-    margin: 0;
+    font-size: 54px;
 }
 
 h2 {
-    font-size: 40px;
-    margin: 0;
+    font-size: 38px;
 }
 
 h3 {
-    font-size: 30px;
-    margin: 0;
+    font-size: 27px;
 }
 
 h4 {
-    font-size: 20px;
-    margin: 0;
+    font-size: 24px;
 }
 
 img {
@@ -51,22 +52,22 @@ code {
     margin: 0px 0px;
 }
 
-h1>img {
+h1 > img {
     /* a bit smaller than the text for inline */
     height: 64px;
 }
 
-h2>img {
+h2 > img {
     /* a bit smaller than the text for inline */
     height: 36px;
 }
 
-h3>img {
+h3 > img {
     /* a bit smaller than the text for inline */
     height: 24px;
 }
 
-h4>img {
+h4 > img {
     /* a bit smaller than the text for inline */
     height: 16px;
 }
@@ -108,7 +109,7 @@ h4>img {
 
 /* black border makes it easy to separate, just use <hr> between items */
 .simple-border {
-    border: 1px solid black;
+    border: 2px solid #777;
     padding: 10px;
 }
 
@@ -116,7 +117,6 @@ h4>img {
 .avatar-img {
     height: 100px;
     float: left;
-    margin-right: 10px;
 }
 
 .operator-img {
@@ -147,4 +147,178 @@ h4>img {
 
 .clear-both {
     clear: both;
+}
+
+#users {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.user {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border: 2px solid #777;
+  padding: 15px;
+  background-color: #272828cc;
+  overflow: hidden;
+  border-radius: 15px;
+}
+
+.user-background {
+  position: absolute;
+  width: 100%;
+  height: 200%;
+  z-index: -1;
+  top: 0;
+  left: -25%;
+  object-fit: cover;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-header {
+  display: flex;
+  gap: 10px;
+}
+
+.user-body {
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.user-body > div {
+  width: 50%;
+}
+
+.user-supports {
+  display: flex;
+  gap: 5px;
+}
+
+.support-operator {
+  width: 33%;
+  box-sizing: border-box;
+  border-radius: 5px;
+  background-color: #111a;
+}
+
+.support-portrait-anchor {
+  width: 100%;
+  display: inline-block;
+  position: relative;
+}
+
+.support-portrait {
+  width: 100%;
+  height: fit-content;
+}
+
+.support-portrait-anchor::after { 
+  content: '';
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  background: linear-gradient(transparent, 70%, black);
+}
+
+.support-portrait-text {
+  display: flex;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 2;
+  flex-direction: column;
+  align-items: baseline;
+  color: #eee;
+}
+
+.support-portrait-text > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.support-portrait-text img {
+  height: 32px;
+}
+
+.portrait-skill {
+  position: absolute;
+  width: 40%;
+  z-index: 1;
+  display: inline-block;
+  bottom: 0;
+  right: 5px;
+}
+
+.portrait-skill .mastery-img{
+  height: 30%;
+  top: 2px;
+  left: 2px;
+}
+
+.portrait-skill .on-portrait-skill {
+  height: unset;
+  width: 100%;
+}
+
+.support-info {
+  padding: 5px;
+  text-align: center;
+}
+
+.support-other-skill-container { 
+  display: flex;
+  gap: 5px;
+  padding: 0 10px;
+  margin: 5px 0;
+}
+
+.support-other-skills {
+  display: inline-block;
+  width: 33%;
+  aspect-ratio: 1/1;
+}
+
+.other-skill-icon {
+  height: unset;
+  width: 100%;
+}
+
+.support-other-skills .mastery-img {
+  height: 30%;
+  top: 2px;
+  left: 2px;
+}
+
+.support-module {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.support-module > img {
+  height: 32px;
+}
+
+@media only screen and (max-width: 1200px) {
+  .user-body {
+    flex-direction: column;
+  }
+  .user-body > div {
+    width: 100% !important; /* why??? */
+  }
+  .user-background {
+    left: 0;
+  }
 }
