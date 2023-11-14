@@ -37,11 +37,13 @@ except ImportError:
     pass
 
 
-def get_image(type: str, id: str) -> str:
+def get_image(type: str, id: str, other_repo: bool = False) -> str:
     id = str(id)
     id = id.replace("@", "_") if "@" in id else id.replace("#", "_")
     id = urllib.parse.quote(id)
 
+    if other_repo:
+        return f"https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/{type}/{id}.png"
     return f"https://raw.githubusercontent.com/Aceship/Arknight-Images/main/{type}/{id}.png"
 
 
@@ -49,7 +51,7 @@ def get_avatar(char_id: str, skin_id: str) -> str:
     if "@" not in skin_id and skin_id.endswith("#1"):
         skin_id = char_id
 
-    return get_image("avatars", skin_id)
+    return get_image("avatar", skin_id, True)
 
 
 env_globals = dict(
