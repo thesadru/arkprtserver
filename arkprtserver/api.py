@@ -9,7 +9,7 @@ import aiohttp
 import aiohttp.web
 import arkprts
 
-from . import app as app_module
+from arkprtserver import app as app_module
 
 __all__ = ("api_routes",)
 
@@ -30,7 +30,8 @@ def format_blackboard(string: str, blackboard: typing.Mapping[str, object]) -> s
         return value
 
     string = re.sub(r"{(.+?)(?:\:(.+?))?}", replacer, string)
-    return re.sub(r"<([@$].+?|/)>", "", string)
+    # return re.sub(r"<([@$].+?|/)>", "", string)
+    return string
 
 
 @api_routes.get("/api/raw/search")
@@ -52,6 +53,7 @@ async def search_raw(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse
     data = await client.get_raw_friend_info([uid["uid"] for uid in uid_data["result"]], server=server)
     users = data["friends"]
 
+    request.app["log_request"](request=request, users=users)
     return aiohttp.web.json_response(users)
 
 
@@ -352,4 +354,5 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
 
         return_data.append(user_data)
 
+    request.app["log_request"](request=request, users=return_data)
     return aiohttp.web.json_response(return_data)
