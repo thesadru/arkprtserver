@@ -9,7 +9,7 @@ import aiohttp
 import aiohttp.web
 import arkprts
 
-from arkprtserver import app as app_module
+from . import app as app_module
 
 __all__ = ("api_routes",)
 
@@ -87,7 +87,7 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
             "level": user.level,
             "avatar": ...,
             "supports": ...,
-            "last_online": user.last_online_time.astimezone(datetime.timezone.utc).isoformat(),
+            "lastonline": user.last_online_time.astimezone(datetime.timezone.utc).isoformat(),
             "medals": ...,
             "registration": user.register_ts.astimezone(datetime.timezone.utc).isoformat(),
             "progression": ...,
@@ -356,3 +356,143 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
 
     request.app["log_request"](request=request, users=return_data)
     return aiohttp.web.json_response(return_data)
+
+
+@api_routes.get("/api/login/sendcode")
+async def login_sendcode(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
+    """Send an email code."""
+    server = request.query.get("server", "en")
+    if server not in ("en", "jp", "kr"):
+        return aiohttp.web.json_response({"message": "Unsupported server"}, status=400)
+
+    lang = request.query.get("lang", server)
+    if lang not in ("en", "jp", "kr"):
+        return aiohttp.web.json_response({"message": "Unsupported language"}, status=400)
+
+    email = request.query.get("email")
+    if not email:
+        return aiohttp.web.json_response({"message": "Missing 'email' param"}, status=400)
+
+    auth = arkprts.YostarAuth(server, network=request.app["client"].network)
+    await auth._request_yostar_auth(email)  # lang=lang
+
+    request.app["log_request"](request=request)
+    return aiohttp.web.json_response({"email": email})
+
+
+@api_routes.get("/api/login")
+async def login(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
+    """Send an email code."""
+    server = request.query.get("server", "en")
+    if server not in ("en", "jp", "kr"):
+        return aiohttp.web.json_response({"message": "Unsupported server"}, status=400)
+
+    lang = request.query.get("lang", server)
+    if lang not in ("en", "jp", "kr"):
+        return aiohttp.web.json_response({"message": "Unsupported language"}, status=400)
+
+    email, code = request.query.get("email"), request.query.get("code")
+    if not email:
+        return aiohttp.web.json_response({"message": "Missing 'email' param"}, status=400)
+    if not code or not code.isdigit():
+        return aiohttp.web.json_response({"message": "Missing 'code' param"}, status=400)
+
+    auth = arkprts.YostarAuth(server, network=request.app["client"].network)
+    channel_uid, token = await auth.get_token_from_email_code(email, code)
+
+    auth = {"server": server, "channeluid": channel_uid, "token": token}
+    request.app["log_request"](request=request, auth=auth)
+    response = aiohttp.web.json_response(auth)
+    response.set_cookie("server", server)
+    response.set_cookie("channeluid", channel_uid)
+    response.set_cookie("token", token)
+    return response
+
+
+def get_any(k: str, ds: typing.Collection[typing.Mapping[str, str]]) -> str | None:
+    return next(filter(None, (d.get(k) for d in ds)), None)
+
+
+@api_routes.get("/api/raw/user")
+async def raw_user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
+    """Get raw user data."""
+    ds = (request.query, request.headers, request.cookies)
+    server = get_any("server", ds) or "en"
+    if server not in ("en", "jp", "kr", "cn", "bili", "tw"):
+        return aiohttp.web.json_response({"message": "Unsupported server"}, status=400)
+
+    channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
+    uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
+    if uid and secret and seqnum and seqnum.isdigit():
+        auth = arkprts.Auth()
+        auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
+    elif channel_uid and token:
+        auth = await arkprts.Auth.from_token(server, channel_uid=channel_uid, token=token)
+    else:
+        return aiohttp.web.json_response({"message": "Insufficient authentication"}, status=403)
+
+    global_client: arkprts.Client = request.app["client"]
+    client = arkprts.Client(auth, assets=global_client.assets, network=global_client.network)
+
+    data = await client.get_raw_data()
+
+    headers = {
+        "uid": auth.session.uid,
+        "secret": auth.session.secret,
+        "seqnum": str(auth.session.seqnum),
+    }
+    request.app["log_request"](request=request, user=data["user"])
+    return aiohttp.web.json_response(data["user"], headers=headers)
+
+
+@api_routes.get("/api/user")
+async def user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
+    """Get parsed user data."""
+    ds = (request.query, request.headers, request.cookies)
+    server = get_any("server", ds) or "en"
+    if server not in ("en", "jp", "kr", "cn", "bili", "tw"):
+        return aiohttp.web.json_response({"message": "Unsupported server"}, status=400)
+
+    channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
+    uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
+    if uid and secret and seqnum and seqnum.isdigit():
+        auth = arkprts.Auth()
+        auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
+    elif channel_uid and token:
+        auth = await arkprts.Auth.from_token(server, channel_uid=channel_uid, token=token)
+    else:
+        return aiohttp.web.json_response({"message": "Insufficient authentication"}, status=403)
+
+    global_client: arkprts.Client = request.app["client"]
+    client = arkprts.Client(auth, assets=global_client.assets, network=global_client.network)
+
+    data = await client.get_data()
+
+    return_data = {
+        "user": {
+            "nickname": data.status.nickname,
+            "nicknumber": data.status.nick_number,
+            "level": data.status.level,
+            "exp": data.status.exp,
+            "uid": uid,
+            "sanity": {
+                "current": data.status.current_ap,
+                "max": data.status.max_ap,
+                "last": data.status.ap,
+                "lastupdate": data.status.last_ap_add_time.astimezone(datetime.timezone.utc).isoformat(),
+            },
+            "lastonline": data.status.last_online_ts.astimezone(datetime.timezone.utc).isoformat(),
+            "registration": data.status.register_ts.astimezone(datetime.timezone.utc).isoformat(),
+            "progression": {"id": data.status.main_stage_progress},
+            "server": data.status.server_name,
+            "bio": data.status.resume,
+        },
+    }
+
+    headers = {
+        "uid": auth.session.uid,
+        "secret": auth.session.secret,
+        "seqnum": str(auth.session.seqnum),
+    }
+    request.app["log_request"](request=request, user=return_data)
+    return aiohttp.web.json_response(return_data, headers=headers)

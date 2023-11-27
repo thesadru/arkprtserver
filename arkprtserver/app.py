@@ -199,7 +199,7 @@ async def login(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
     response = aiohttp.web.HTTPTemporaryRedirect("/user")
     response.set_cookie("server", auth.server)
-    response.set_cookie("channel_uid", channel_uid)
+    response.set_cookie("channeluid", channel_uid)
     response.set_cookie("token", token)
 
     return response
@@ -210,7 +210,7 @@ async def logout(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """Logout."""
     response = aiohttp.web.HTTPTemporaryRedirect("/login")
     response.del_cookie("server")
-    response.del_cookie("channel_uid")
+    response.del_cookie("channeluid")
     response.del_cookie("token")
 
     return response
@@ -218,16 +218,16 @@ async def logout(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
 async def authorize(request: aiohttp.web.Request) -> typing.Union[arkprts.Client, aiohttp.web.Response]:
     """Attempt to authorize or redirect to login."""
-    if not request.cookies.get("channel_uid") or not request.cookies.get("token") or not request.cookies.get("server"):
+    if not request.cookies.get("channeluid") or not request.cookies.get("token") or not request.cookies.get("server"):
         return aiohttp.web.HTTPTemporaryRedirect("/login")
 
     auth = arkprts.YostarAuth(server=request.cookies["server"], network=client.network)  # type: ignore
 
     try:
-        await auth.login_with_token(request.cookies["channel_uid"], request.cookies["token"])
+        await auth.login_with_token(request.cookies["channeluid"], request.cookies["token"])
     except arkprts.errors.BaseArkprtsError:
         response = aiohttp.web.HTTPTemporaryRedirect("/login")
-        response.del_cookie("channel_uid")
+        response.del_cookie("channeluid")
         response.del_cookie("token")
         response.del_cookie("server")
         return response
