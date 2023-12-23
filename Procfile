@@ -1,1 +1,1 @@
-worker: python -m arkprtserver
+web: python -m arkprtserver
