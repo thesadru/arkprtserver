@@ -1,1 +1,1 @@
-web: python -m arkprtserver
+web: python -m arkprtserver --port $PORT --host 0.0.0.0
