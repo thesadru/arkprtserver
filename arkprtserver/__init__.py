@@ -1,2 +1,3 @@
 """Arkprtserver."""
+
 from . import app

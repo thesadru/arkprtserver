@@ -33,7 +33,7 @@ Support units:
 %} (M{{ support.skills|sum(attribute='specialize_level') }}){% endif 
 %}{% if support.current_equip and '001' not in support.current_equip 
 %}{% set module = gamedata.uniequip_table.equip_dict[support.current_equip] 
-%} | {{ module.type_name_1 }}-{{ module.type_name_2 }} L{{ support.equip[support.current_equip].level }}{% endif %}
+%} {{ module.type_name_1 }}-{{ module.type_name_2 }}{{ support.equip[support.current_equip].level }}{% endif %}
 {%endfor%}
     " />
     {% endif %}
@@ -151,7 +151,7 @@ Support units:
                           <span>
                               <a class="support-portrait-anchor"
                                   href="https://arknights.wiki.gg/wiki/{{ support.static.name.replace(' ', '_') }}">
-                                  <img src="{{ get_image('portrait', support.skin_id, True) }}" class="support-portrait"
+                                  <img src="{{ get_image('portrait', support.skin_id and support.skin_id.lower(), True) }}" class="support-portrait"
                                       title="{{ support.static.name }}">
                                 <span class="support-portrait-text">
                                   {% if support.potential_rank %}
@@ -198,7 +198,7 @@ Support units:
                             {% set module = gamedata.uniequip_table["equipDict"][support.current_equip] %}
                             {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
                             <span class="support-module">
-                              <img src="{{ get_image('equip/type', module_name.lower()) }}" />
+                              <img src="https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets/cn/assets/torappu/dynamicassets/arts/ui/uniequiptype/{{ module_name.lower() }}.png" />
                               {{ module_name }} {{ support.equip[support.current_equip].level }}
                             </span>
                           {% endif %}

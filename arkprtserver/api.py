@@ -1,4 +1,5 @@
 """Server app."""
+
 from __future__ import annotations
 
 import datetime
@@ -374,7 +375,7 @@ async def login_sendcode(request: aiohttp.web.Request) -> aiohttp.web.StreamResp
         return aiohttp.web.json_response({"message": "Missing 'email' param"}, status=400)
 
     auth = arkprts.YostarAuth(server, network=request.app["client"].network)
-    await auth._request_yostar_auth(email)  # lang=lang
+    await auth.send_email_code(email)  # lang=lang
 
     request.app["log_request"](request=request)
     return aiohttp.web.json_response({"email": email})
@@ -424,7 +425,15 @@ async def raw_user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
     channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
     uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
     if uid and secret and seqnum and seqnum.isdigit():
-        auth = arkprts.Auth()
+        auth = (
+            arkprts.YostarAuth(server)
+            if server in ("en", "jp", "kr")
+            else (
+                arkprts.LongchengAuth()
+                if server == "tw"
+                else arkprts.HypergryphAuth() if server == "cn" else arkprts.BilibiliAuth()
+            )
+        )
         auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
     elif channel_uid and token:
         auth = await arkprts.Auth.from_token(server, channel_uid=channel_uid, token=token)
@@ -456,7 +465,15 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
     channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
     uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
     if uid and secret and seqnum and seqnum.isdigit():
-        auth = arkprts.Auth()
+        auth = (
+            arkprts.YostarAuth(server)
+            if server in ("en", "jp", "kr")
+            else (
+                arkprts.LongchengAuth()
+                if server == "tw"
+                else arkprts.HypergryphAuth() if server == "cn" else arkprts.BilibiliAuth()
+            )
+        )
         auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
     elif channel_uid and token:
         auth = await arkprts.Auth.from_token(server, channel_uid=channel_uid, token=token)

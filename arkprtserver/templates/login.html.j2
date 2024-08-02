@@ -14,6 +14,19 @@
 
 
 <body>
+    <div id="search">
+      <a href="/"><img id="logo" src="https://raw.githubusercontent.com/Aceship/Arknight-Images/main/avatars/char_150_snakek.png" /></a>
+        <form action="/search" method="GET">
+            <input type="text" name="nickname" placeholder="Search for player" required>
+            <select name="server">
+                <option value="en">EN</option>
+                <option value="jp">JP</option>
+                <option value="kr">KR</option>
+            </select>
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <input type="submit" value="Search">
+        </form>
+    </div>
     <br>
     <div class="simple-border">
         Enter your Yostar email to login and click "Send code".
@@ -52,8 +65,9 @@
 </body>
 
     <footer>
-    If you happen to keep getting logged out it's possible that the server is out-of-date.<br>
-    If search is broken, then login is definitely broken too.
+    If you happen to keep getting logged out instantly it's possible that the server is out-of-date.<br>
+    If search is broken, then login is definitely broken too. Check if you can search your account if you cannot log in.<br>
+    The website typically gets updated a few hours after a patch.<br>
     </footer>
 
 </html>

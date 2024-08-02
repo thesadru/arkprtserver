@@ -1,4 +1,5 @@
 """Server app."""
+
 import asyncio
 import datetime
 import logging
@@ -88,6 +89,12 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
     app.update(env.globals)  # type: ignore
 
     LOGGER.info("Startup finished.")
+
+
+async def reload_client() -> None:
+    """Re-login and download new assets."""
+    assert isinstance(client.auth, arkprts.GuestAuth)
+    client.auth.sessions.clear()
 
 
 @aiohttp.web.middleware

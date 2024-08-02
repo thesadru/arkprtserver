@@ -1,4 +1,5 @@
 """Export user data to various services."""
+
 import typing
 import urllib.parse
 
@@ -30,17 +31,42 @@ KroosterOperators = typing.Mapping[
 ]
 
 
+def get_krooster_skin(skin: str, char_id: str) -> str:
+    """Turn skin and char id into an aceship skin id."""
+    if "@" in skin:  # shop skin
+        return skin.replace("@", "_")
+    if skin.endswith("#1"):  # default skin
+        return char_id
+    # E2 skin
+    return skin.replace("#", "_")
+
+
 def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
     """Export characters to krooster."""
     data: KroosterOperators = {}
-
     for char in user.troop.chars.values():
-        if "@" in char.skin:  # shop skin
-            skin_id = char.skin.replace("@", "_")
-        elif char.skin.endswith("#1"):  # default skin
-            skin_id = char.char_id
-        else:  # E2 skin
-            skin_id = char.skin.replace("#", "_")
+        # anything for amiya, even code repetition <3
+        if char.tmpl:
+            for char_id, tmpl in char.tmpl.items():
+                data[char_id] = {
+                    "id": char_id,
+                    "name": "Amiya",
+                    "favorite": char.star_mark,
+                    "rarity": 5,
+                    "class": {
+                        "char_002_amiya": "Caster",
+                        "char_1001_amiya2": "Guard",
+                    }.get(char_id, "Medic"),
+                    "potential": char.potential_rank + 1,
+                    "promotion": char.evolve_phase,
+                    "owned": True,
+                    "level": char.level,
+                    "skillLevel": char.main_skill_lvl,
+                    "mastery": [skill.specialize_level or None for skill in tmpl.skills],
+                    "module": [module.level if not module.locked else None for module in tmpl.equip.values()][1:],
+                    "skin": urllib.parse.quote(get_krooster_skin(tmpl.skin_id, char_id)),
+                }
+            continue
 
         data[char.char_id] = {
             "id": char.char_id,
@@ -64,7 +90,7 @@ def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
             "skillLevel": char.main_skill_lvl,
             "mastery": [skill.specialize_level or None for skill in char.skills],
             "module": [module.level if not module.locked else None for module in char.equip.values()][1:],
-            "skin": urllib.parse.quote(skin_id),
+            "skin": urllib.parse.quote(get_krooster_skin(char.skin, char.char_id)),
         }
 
     return data
@@ -77,7 +103,7 @@ def export_krooster_items(user: arkprts.models.User) -> str:
 
 
 PenguinStatisticsItem = typing.TypedDict(  # noqa: UP013
-    "Item",
+    "PenguinStatisticsItem",
     {
         "id": str,
         "have": int,
@@ -85,7 +111,7 @@ PenguinStatisticsItem = typing.TypedDict(  # noqa: UP013
     },
 )
 PenguinStatisticsOption = typing.TypedDict(  # noqa: UP013
-    "Options",
+    "PenguinStatisticsOption",
     {
         "byProduct": bool,
         "requireExp": bool,
