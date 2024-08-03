@@ -1,6 +1,8 @@
 # arkprtserver
 
-Snake guide.
+Website displaying arknights user information.
+
+Built with [ArkPRTS](https://github.com/thesadru/ArkPRTS)
 
 ---
 
