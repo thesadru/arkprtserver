@@ -45,6 +45,9 @@ footer {
 
 code {
     white-space: pre-line;
+}
+
+#export > code {
     font-size: 12px;
     /* make the line height smaller, this does nothing for some reason */
     padding: 0;
@@ -70,6 +73,14 @@ h3 > img {
 h4 > img {
     /* a bit smaller than the text for inline */
     height: 16px;
+}
+
+a:link {
+    color: lightblue;
+}
+
+a:visited {
+    color: lightpink;
 }
 
 #logo {

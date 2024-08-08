@@ -25,7 +25,12 @@ app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
 env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
-client = arkprts.Client(server="en", assets=arkprts.BundleAssets(os.environ.get("GAMEDATA")))
+network = arkprts.NetworkSession()
+client = arkprts.Client(
+    server="en",
+    assets=arkprts.BundleAssets(os.environ.get("GAMEDATA"), network=network),
+    network=network,
+)
 
 LOGGER: logging.Logger = logging.getLogger("arkprtserver")
 

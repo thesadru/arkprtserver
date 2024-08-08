@@ -39,7 +39,9 @@
         <iframe class="announcement-iframe" src="{{preannouncement['preAnnounceUrl']}}" title="Pre-announcement" width="1560" height="450"></iframe>
         {% endif %}
         {% for announcement in announcements["announceList"] %}
+        {% if 'Fair Play' not in announcement['title'] %}
         <iframe class="announcement-iframe" src="{{announcement['webUrl']}}" title="{{announcement['title']}}" width="780" height="450"></iframe>
+        {% endif %}
         {% endfor %}
     </div>
 </body>

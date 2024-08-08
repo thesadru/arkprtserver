@@ -136,7 +136,6 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 "nation": team[char_data.nation_id].power_name if char_data.get("nation_id") else None,
                 "team": team[char_data.team_id].power_name if char_data.get("team_id") else None,
                 "number": char_data.display_number,
-                "tags": list(char_data.tag_list),
                 "rarity": char_data.rarity[-1],
                 "class": {
                     "id": char_data.profession,
@@ -184,8 +183,6 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                     "sp": {
                         "type": skill_data.sp_data.sp_type,
                         "cost": skill_data.sp_data.sp_cost,
-                        "initial": skill_data.sp_data.init_sp,
-                        "charges": skill_data.sp_data.max_charge_time,
                     },
                     "asset": app_module.get_image(
                         "skills",
@@ -233,10 +230,6 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 talent = {
                     "name": candidate.name,
                     "description": format_blackboard(candidate.description, candidate.blackboard),
-                    "requirements": {
-                        "elite": int(candidate.unlock_condition.phase[-1]),
-                        "potential": candidate.required_potential_rank,
-                    },
                 }
                 support["talents"].append(talent)
 
@@ -307,11 +300,11 @@ async def search(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:  #
                 "id": user.main_stage_progress,
                 "code": stage.code,
                 "name": stage.name,
-                "description": stage.description,
                 "level": stage.danger_level,
+                "type": "INPROGRESS",
             }
         else:
-            user_data["progression"] = {"id": None, "code": None, "name": None, "description": None, "level": None}
+            user_data["progression"] = {"id": None, "code": None, "name": None, "level": None, "type": "COMPLETED"}
 
         assistant = client.assets.get_operator(user.secretary, server=lang)
         if assistant:  # null for new accounts
@@ -434,9 +427,15 @@ async def raw_user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
                 else arkprts.HypergryphAuth() if server == "cn" else arkprts.BilibiliAuth()
             )
         )
+        auth.network = request.app["client"].network
         auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
     elif channel_uid and token:
-        auth = await arkprts.Auth.from_token(server, channel_uid=channel_uid, token=token)
+        auth = await arkprts.Auth.from_token(
+            server,
+            channel_uid=channel_uid,
+            token=token,
+            network=request.app["client"].network,
+        )
     else:
         return aiohttp.web.json_response({"message": "Insufficient authentication"}, status=403)
 
@@ -474,9 +473,15 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
                 else arkprts.HypergryphAuth() if server == "cn" else arkprts.BilibiliAuth()
             )
         )
+        auth.network = request.app["client"].network
         auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
     elif channel_uid and token:
-        auth = await arkprts.Auth.from_token(server, channel_uid=channel_uid, token=token)
+        auth = await arkprts.Auth.from_token(
+            server,
+            channel_uid=channel_uid,
+            token=token,
+            network=request.app["client"].network,
+        )
     else:
         return aiohttp.web.json_response({"message": "Insufficient authentication"}, status=403)
 
