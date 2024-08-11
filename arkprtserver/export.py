@@ -44,30 +44,14 @@ def get_krooster_skin(skin: str, char_id: str) -> str:
 def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
     """Export characters to krooster."""
     data: KroosterOperators = {}
+    chars: list[arkprts.models.data.Character] = []
     for char in user.troop.chars.values():
-        # anything for amiya, even code repetition <3
-        if char.tmpl:
-            for char_id, tmpl in char.tmpl.items():
-                data[char_id] = {
-                    "id": char_id,
-                    "name": "Amiya",
-                    "favorite": char.star_mark,
-                    "rarity": 5,
-                    "class": {
-                        "char_002_amiya": "Caster",
-                        "char_1001_amiya2": "Guard",
-                    }.get(char_id, "Medic"),
-                    "potential": char.potential_rank + 1,
-                    "promotion": char.evolve_phase,
-                    "owned": True,
-                    "level": char.level,
-                    "skillLevel": char.main_skill_lvl,
-                    "mastery": [skill.specialize_level or None for skill in tmpl.skills],
-                    "module": [module.level if not module.locked else None for module in tmpl.equip.values()][1:],
-                    "skin": urllib.parse.quote(get_krooster_skin(tmpl.skin_id, char_id)),
-                }
-            continue
+        if char.variations:
+            chars.extend(char.variations.values())
+        else:
+            chars.append(char)
 
+    for char in chars:
         data[char.char_id] = {
             "id": char.char_id,
             "name": char.static.name,

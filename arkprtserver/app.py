@@ -103,6 +103,25 @@ async def reload_client() -> None:
 
 
 @aiohttp.web.middleware
+async def cors_middleware(
+    request: aiohttp.web.Request,
+    handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
+) -> aiohttp.web.StreamResponse:
+    """Allow all kinds of CORS everywhere."""
+    response = await handler(request)
+    response.headers.update(
+        {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "PUT, GET, POST, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Expose-Headers": "*",
+        },
+    )
+    return response
+
+
+@aiohttp.web.middleware
 async def startup_middleware(
     request: aiohttp.web.Request,
     handler: typing.Callable[[aiohttp.web.Request], typing.Awaitable[aiohttp.web.StreamResponse]],
@@ -144,6 +163,7 @@ async def on_shutdown(app: aiohttp.web.Application) -> None:
     await client.network.close()
 
 
+app.middlewares.append(cors_middleware)
 app.middlewares.append(startup_middleware)
 app.middlewares.append(error_middleware)
 app.on_shutdown.append(on_shutdown)

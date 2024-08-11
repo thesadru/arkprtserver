@@ -40,13 +40,30 @@ Example:
 ```
 
 ### `/api/raw/user`
-Returns private raw arknights user data. Requires authentication (`server, channeluid, token`) which can be sent anywhere in query, headers or cookies. Server can be any of `en, jp, kr, cn, bili, tw`.
+Returns private raw arknights user data. 
+Requires authentication (`server, channeluid, token`) which can be sent anywhere in query, headers or cookies. Server can be any of `en, jp, kr, cn, bili, tw`.
 
 If you are a bit familiar with the arknights internals, `uid, secret, seqnum` are also accepted.
 
 [example (when logged in)](https://arkprts.ashlen.top/api/raw/user)
 ```json
 {"dungeon": {"stages": {"main_00-01": {"stageId": "main_00-01", "completeTimes": 4, "startTimes": 5, "practiceTimes": 0, "state": 3, "hasBattleReplay": 1, "noCostCnt": 0}, ...
+```
+
+### `POST /proxy/...`
+Proxies any request towards the arknights servers. This can be used to get futher raw data. For example `/api/raw/user` is just `/proxy/account/syncData`. 
+Requires authentication (`server, channeluid, token`) which can be sent anywhere in query, headers or cookies. Server can be any of `en, jp, kr, cn, bili, tw`.
+
+If you are a bit familiar with the arknights internals, `uid, secret, seqnum` are also accepted.
+If the endpoint complains about needing to log in first, try `/proxy/...?sync=true` to send an extra sync request beforehand.
+
+example (when logged in)
+```
+POST https://arkprts.ashlen.top/proxy/crisisV2/getInfo?sync=true
+{}
+```
+```json
+{"info": {"seasonId": "", "mapStageDataMap": {}, "mapDetailDataMap": {}, "seasonConst": {}, "achievementDataMap": {"crisis_v2_season_1_1": {"pMapName": {"name": "Ashen Swampland", "code": "Victoria"}, ...
 ```
 
 

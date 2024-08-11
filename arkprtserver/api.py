@@ -418,17 +418,13 @@ async def raw_user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
     channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
     uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
     if uid and secret and seqnum and seqnum.isdigit():
-        auth = (
-            arkprts.YostarAuth(server)
-            if server in ("en", "jp", "kr")
-            else (
-                arkprts.LongchengAuth()
-                if server == "tw"
-                else arkprts.HypergryphAuth() if server == "cn" else arkprts.BilibiliAuth()
-            )
+        auth = await arkprts.Auth.from_session(
+            server,
+            uid=uid,
+            secret=secret,
+            seqnum=seqnum,
+            network=request.app["client"].network,
         )
-        auth.network = request.app["client"].network
-        auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
     elif channel_uid and token:
         auth = await arkprts.Auth.from_token(
             server,
@@ -439,8 +435,7 @@ async def raw_user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
     else:
         return aiohttp.web.json_response({"message": "Insufficient authentication"}, status=403)
 
-    global_client: arkprts.Client = request.app["client"]
-    client = arkprts.Client(auth, assets=global_client.assets, network=global_client.network)
+    client = arkprts.Client(auth, assets=False)
 
     data = await client.get_raw_data()
 
@@ -464,17 +459,13 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
     channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
     uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
     if uid and secret and seqnum and seqnum.isdigit():
-        auth = (
-            arkprts.YostarAuth(server)
-            if server in ("en", "jp", "kr")
-            else (
-                arkprts.LongchengAuth()
-                if server == "tw"
-                else arkprts.HypergryphAuth() if server == "cn" else arkprts.BilibiliAuth()
-            )
+        auth = await arkprts.Auth.from_session(
+            server,
+            uid=uid,
+            secret=secret,
+            seqnum=seqnum,
+            network=request.app["client"].network,
         )
-        auth.network = request.app["client"].network
-        auth.session = arkprts.AuthSession(server, uid=uid, secret=secret, seqnum=int(seqnum))
     elif channel_uid and token:
         auth = await arkprts.Auth.from_token(
             server,
@@ -518,3 +509,53 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
     }
     request.app["log_request"](request=request, user=return_data)
     return aiohttp.web.json_response(return_data, headers=headers)
+
+
+@api_routes.post(r"/proxy/{endpoint:.+}")
+async def proxy(request: aiohttp.web.Request) -> aiohttp.web.StreamResponse:
+    ds = (request.query, request.headers, request.cookies)
+    server = get_any("server", ds) or "en"
+    if server not in ("en", "jp", "kr", "cn", "bili", "tw"):
+        return aiohttp.web.json_response({"message": "Unsupported server"}, status=400)
+
+    channel_uid, token = get_any("channeluid", ds), get_any("token", ds)
+    uid, secret, seqnum = get_any("uid", ds), get_any("secret", ds), get_any("seqnum", ds)
+    if uid and secret and seqnum and seqnum.isdigit():
+        auth = await arkprts.Auth.from_session(
+            server,
+            uid=uid,
+            secret=secret,
+            seqnum=seqnum,
+            network=request.app["client"].network,
+        )
+    elif channel_uid and token:
+        auth = await arkprts.Auth.from_token(
+            server,
+            channel_uid=channel_uid,
+            token=token,
+            network=request.app["client"].network,
+        )
+    else:
+        return aiohttp.web.json_response({"message": "Insufficient authentication"}, status=403)
+
+    if request.query.get("sync", "").lower() in ("true", "1"):
+        await auth.auth_request("account/syncData", json={"platform": 1})
+        await auth.auth_request(
+            "account/syncStatus",
+            json={
+                "modules": 7,
+                "params": {
+                    "16": {"goodIdMap": {"LS": [], "HS": [], "ES": [], "CASH": [], "GP": ["GP_Once_1"], "SOCIAL": []}},
+                },
+            },
+        )
+
+    data = await auth.auth_request(request.match_info["endpoint"], json=await request.json(), handle_errors=False)
+
+    headers = {
+        "uid": auth.session.uid,
+        "secret": auth.session.secret,
+        "seqnum": str(auth.session.seqnum),
+    }
+    request.app["log_request"](request=request, data=data)
+    return aiohttp.web.json_response(data, headers=headers, status=data.get("statusCode", 200))
