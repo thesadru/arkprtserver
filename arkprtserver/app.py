@@ -71,6 +71,8 @@ env_globals = dict(
 env.globals.update(env_globals)  # type: ignore
 app["log_request"] = globals().get("log_request", lambda **_: None)  # type: ignore
 
+startup_event = asyncio.Event()
+
 
 async def startup(app: aiohttp.web.Application) -> None:
     """Startup function."""
@@ -92,6 +94,8 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
     env.globals["preannouncement"] = await client.network.request("prean")  # type: ignore
 
     app.update(env.globals)  # type: ignore
+
+    startup_event.set()
 
     LOGGER.info("Startup finished.")
 
@@ -128,10 +132,9 @@ async def startup_middleware(
 ) -> aiohttp.web.StreamResponse:
     """Startup middleware."""
     if "/api" in request.path:
-        while "client" not in request.app._state:
-            await asyncio.sleep(0)
+        await startup_event.wait()
 
-    if "client" not in request.app._state:
+    if not startup_event.is_set():
         template = env.get_template("startup.html.j2")
         return aiohttp.web.Response(text=template.render(request=request), content_type="text/html")
 
@@ -278,6 +281,38 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
 
     template = env.get_template("user.html.j2")
     return aiohttp.web.Response(text=template.render(user=user, request=request), content_type="text/html")
+
+
+@routes.get("/bundles")
+async def bundles(request: aiohttp.web.Request) -> aiohttp.web.Response:
+    """Display downloadable bundles."""
+    assert isinstance(client.assets, arkprts.assets.BundleAssets)
+    server = request.query.get("server", "cn")
+    if server not in ("en", "kr", "jp", "tw", "cn", "bili"):
+        return aiohttp.web.Response(text="Unknown server", status=400)
+
+    await client.network.load_version_config("all")
+    hot_update_list = await client.assets._get_hot_update_list(server)
+
+    version = client.network.versions[server]["resVersion"]
+
+    buttons = " ".join(f'<a href="?server={server}">{server}</a>' for server in ("en", "kr", "jp", "tw", "cn", "bili"))
+    hul_link = (
+        f'<a href="{client.network.domains[server]["hu"]}/Android/assets/{version}/hot_update_list.json">hot_update_list.json</a>'
+        f' (version: {version}, client: {client.network.versions[server]["clientVersion"]})'
+    )
+    html = buttons + "<hr>\n" + hul_link + "<br><br>\n"
+    for i in hot_update_list["abInfos"]:
+        url = (
+            client.network.domains[server]["hu"]
+            + f"/Android/assets/{version}/"
+            + arkprts.bundle.asset_path_to_server_filename(i["name"]).replace(".mp4", ".dat")
+        )
+        html += f'<a download="{i["name"]}.zip" href="{url}">{i["name"]}</a> ({i["totalSize"] / 2**20:,.2f}MB)</br>\n'
+
+    html += "<hr>\n<footer>All links are .zip files containing a single file.</footer>"
+
+    return aiohttp.web.Response(text=html, content_type="text/html")
 
 
 app.router.add_static("/static", "arkprtserver/static", name="static")
