@@ -25,10 +25,9 @@ app = aiohttp.web.Application()
 routes = aiohttp.web.RouteTableDef()
 env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape=True, extensions=["jinja2.ext.do"])
 
-network = arkprts.NetworkSession()
+network = arkprts.NetworkSession(default_server="en")
 client = arkprts.Client(
-    server="en",
-    assets=arkprts.BundleAssets(os.environ.get("GAMEDATA"), network=network),
+    assets=arkprts.BundleAssets(os.environ.get("GAMEDATA"), network=network, default_server="en"),
     network=network,
 )
 
@@ -60,9 +59,68 @@ def get_avatar(char_id: str, skin_id: str) -> str:
     return get_image("avatar", skin_id, True)
 
 
+def normalize_filename(filename: str) -> str:
+    """Transform filename from the id to the asset filename."""
+    filename = filename.replace("@", "_") if "@" in filename else filename.replace("#", "_")
+    return urllib.parse.quote(filename)
+
+
+def get_charimage(char_id: str, skin_id: typing.Optional[str], *, lowres: bool = False) -> str:
+    """Get a full image of a character."""
+    if not skin_id or "@" not in skin_id and skin_id.endswith("#1"):
+        skin_id = char_id
+
+    if lowres:
+        skin_id += "b"
+
+    return get_asset("arts/charpoirtraits", char_id, skin_id)
+
+
+def get_charavatar(char_id: str, skin_id: typing.Optional[str]) -> str:
+    """Get a character portrait."""
+    if not skin_id or skin_id.endswith("#1"):
+        return get_asset("arts/charavatars", normalize_filename(char_id))
+    if skin_id.endswith("#2"):
+        return get_asset("arts/charavatars/elite", normalize_filename(skin_id))
+    if "@" in skin_id:
+        return get_asset("arts/charavatars/skins", normalize_filename(skin_id))
+
+    return get_asset("arts/charavatars", normalize_filename(char_id))
+
+
+def get_charportrait(char_id: str, skin_id: typing.Optional[str]) -> str:
+    """Get a character portrait."""
+    return get_asset("arts/charportraits", normalize_filename(skin_id or char_id + "#1"))
+
+
+def get_skill(skill_name: str) -> str:
+    skill_name = "skill_icon_" + skill_name
+    if "skcom" in skill_name:
+        return get_asset(
+            "arts/skills",
+            skill_name,
+            skill_name + ".png",
+            skill_name + ".png",
+        )  # what the hell did I mess up
+
+    return get_asset("arts/skills", skill_name)
+
+
+def get_asset(*paths: str, ext: str = "png") -> str:
+    """Get an asset from the ArknightsAssets repo."""
+    path = "/".join(paths) + "." + ext if not any("." in path for path in paths) else "/".join(paths)
+    return f"https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets/cn/assets/torappu/dynamicassets/{path}"
+
+
 env_globals = dict(
     get_image=get_image,
     get_avatar=get_avatar,
+    normalize_filename=normalize_filename,
+    get_charimage=get_charimage,
+    get_charavatar=get_charavatar,
+    get_charportrait=get_charportrait,
+    get_skill=get_skill,
+    get_asset=get_asset,
     export=export,
     client=client,
     gamedata=client.assets,

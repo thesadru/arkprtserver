@@ -14,7 +14,7 @@
     {% if users %}
     {% set user = users[0] %}
     <meta property="og:title" content="{{ user.nickname }}#{{ user.nick_number }} - {{ user.uid }}" />
-    <meta property="og:image" content="{{ get_avatar(user.secretary, user.secretary_skin_id) }}" />
+    <meta property="og:image" content="{{ get_charavatar(user.secretary, user.secretary_skin_id) }}" />
     {# I apologize for this mess, no idea how else to eliminate whitespace #}
     <meta property="og:description" content="
 {{ user.resume }}
@@ -96,7 +96,7 @@ Support units:
         {% endif %}
         {% for user in users %}
         <div class="user" id="{{ user.uid }}">
-          <img class="user-background" style="object-position: {{ 'top' if '#1' in user.secretary_skin_id and '@' not in user.secretary_skin_id else 'center' }};" src="{{ get_image('characters', user.secretary_skin_id) }}">
+          <img class="user-background" style="object-position: {{ 'top' if '#1' in user.secretary_skin_id and '@' not in user.secretary_skin_id else 'center' }};" src="{{ get_charimage('characters', user.secretary_skin_id) }}">
             {# TODO: Support default and event avatars #}
             <div class="user-body">
               <div class="clear-both user-info">
@@ -151,7 +151,7 @@ Support units:
                           <span>
                               <a class="support-portrait-anchor"
                                   href="https://arknights.wiki.gg/wiki/{{ support.static.name.replace(' ', '_') }}">
-                                  <img src="{{ get_image('portrait', support.skin_id and support.skin_id.lower(), True) }}" class="support-portrait"
+                                  <img src="{{ get_charportrait(support.char_id, support.skin_id) }}" class="support-portrait"
                                       title="{{ support.static.name }}">
                                 <span class="support-portrait-text">
                                   {% if support.potential_rank %}
@@ -167,7 +167,7 @@ Support units:
                                   </span>
                                 </span>
                                 <span class="portrait-skill">
-                                  <img class="on-portrait-skill" src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                                  <img class="on-portrait-skill" src="{{ get_skill(skill.static.icon_id or skill.skill_id) }}"
                                       title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
                                   {% if skill.specialize_level > 0 %}
                                   <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}"
@@ -183,7 +183,7 @@ Support units:
                           <span class="support-other-skill-container">
                           {% for skill in support.skills %}
                             <span class="relative support-other-skills">
-                                <img class="other-skill-icon" src="{{ get_image('skills', 'skill_icon_' + (skill.static.icon_id or skill.skill_id)) }}"
+                                <img class="other-skill-icon" src="{{ get_skill(skill.static.icon_id or skill.skill_id) }}"
                                     title="{{ skill.static.levels[support.main_skill_lvl-1+skill.specialize_level].name }}">
                                 {% if skill.specialize_level > 0 %}
                                 <img src="{{ get_image('ui/rank', 'm-'+(skill.specialize_level|string)) }}"
@@ -198,7 +198,7 @@ Support units:
                             {% set module = gamedata.uniequip_table["equipDict"][support.current_equip] %}
                             {% set module_name = module.type_name_1 + "-" + module.type_name_2 %}
                             <span class="support-module">
-                              <img src="https://raw.githubusercontent.com/ArknightsAssets/ArknightsAssets/cn/assets/torappu/dynamicassets/arts/ui/uniequiptype/{{ module_name.lower() }}.png" />
+                              <img src="{{ get_asset('arts/ui/uniequiptype', module_name.lower()) }}" />
                               {{ module_name }} {{ support.equip[support.current_equip].level }}
                             </span>
                           {% endif %}
