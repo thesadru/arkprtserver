@@ -96,7 +96,7 @@ Support units:
         {% endif %}
         {% for user in users %}
         <div class="user" id="{{ user.uid }}">
-          <img class="user-background" style="object-position: {{ 'top' if '#1' in user.secretary_skin_id and '@' not in user.secretary_skin_id else 'center' }};" src="{{ get_charimage('characters', user.secretary_skin_id) }}">
+          <img class="user-background" style="object-position: {{ 'top' if '#1' in user.secretary_skin_id and '@' not in user.secretary_skin_id else 'center' }};" src="{{ get_charimage(user.secretary, user.secretary_skin_id) }}">
             {# TODO: Support default and event avatars #}
             <div class="user-body">
               <div class="clear-both user-info">

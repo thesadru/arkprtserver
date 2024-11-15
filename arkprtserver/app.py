@@ -3,7 +3,6 @@
 import asyncio
 import datetime
 import logging
-import os
 import sys
 import traceback
 import typing
@@ -27,7 +26,7 @@ env = jinja2.Environment(loader=jinja2.PackageLoader("arkprtserver"), autoescape
 
 network = arkprts.NetworkSession(default_server="en")
 client = arkprts.Client(
-    assets=arkprts.BundleAssets(os.environ.get("GAMEDATA"), network=network, default_server="en"),
+    assets=arkprts.GitAssets(default_server="en"),
     network=network,
 )
 
@@ -68,12 +67,12 @@ def normalize_filename(filename: str) -> str:
 def get_charimage(char_id: str, skin_id: typing.Optional[str], *, lowres: bool = False) -> str:
     """Get a full image of a character."""
     if not skin_id or "@" not in skin_id and skin_id.endswith("#1"):
-        skin_id = char_id
+        skin_id = char_id + "_1"
 
     if lowres:
         skin_id += "b"
 
-    return get_asset("arts/charpoirtraits", char_id, skin_id)
+    return get_asset("arts/charpoirtraits", char_id, normalize_filename(skin_id))
 
 
 def get_charavatar(char_id: str, skin_id: typing.Optional[str]) -> str:
@@ -90,7 +89,7 @@ def get_charavatar(char_id: str, skin_id: typing.Optional[str]) -> str:
 
 def get_charportrait(char_id: str, skin_id: typing.Optional[str]) -> str:
     """Get a character portrait."""
-    return get_asset("arts/charportraits", normalize_filename(skin_id or char_id + "#1"))
+    return get_asset("arts/charportraits", normalize_filename((skin_id and skin_id.lower()) or char_id + "#1"))
 
 
 def get_skill(skill_name: str) -> str:
@@ -344,19 +343,21 @@ async def user(request: aiohttp.web.Request) -> aiohttp.web.Response:
 @routes.get("/bundles")
 async def bundles(request: aiohttp.web.Request) -> aiohttp.web.Response:
     """Display downloadable bundles."""
-    assert isinstance(client.assets, arkprts.assets.BundleAssets)
     server = request.query.get("server", "cn")
     if server not in ("en", "kr", "jp", "tw", "cn", "bili"):
         return aiohttp.web.Response(text="Unknown server", status=400)
 
-    await client.network.load_version_config("all")
-    hot_update_list = await client.assets._get_hot_update_list(server)
+    version = request.query.get("version")
+    if version is None:
+        await client.network.load_version_config(server)
+        version = client.network.versions[server]["resVersion"]
 
-    version = client.network.versions[server]["resVersion"]
+    hot_update_list_url = client.network.domains[server]["hu"] + f"/Android/assets/{version}/hot_update_list.json"
+    hot_update_list = await network.raw_request("GET",hot_update_list_url)
 
     buttons = " ".join(f'<a href="?server={server}">{server}</a>' for server in ("en", "kr", "jp", "tw", "cn", "bili"))
     hul_link = (
-        f'<a href="{client.network.domains[server]["hu"]}/Android/assets/{version}/hot_update_list.json">hot_update_list.json</a>'
+        f'<a href="{hot_update_list_url}">hot_update_list.json</a>'
         f' (version: {version}, client: {client.network.versions[server]["clientVersion"]})'
     )
     html = buttons + "<hr>\n" + hul_link + "<br><br>\n"
