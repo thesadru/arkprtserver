@@ -83,7 +83,7 @@ def export_krooster_operators(user: arkprts.models.User) -> KroosterOperators:
 def export_krooster_items(user: arkprts.models.User) -> str:
     """Export items to krooster as csv."""
     header = "itemId,owned\n"
-    return header + "\n".join(f"{item_id},{count}" for item_id, count in user.inventory.items() if count > 0)
+    return header + "\n".join(f"{item_id},{count}" for item_id, count in user.inventory.items())
 
 
 PenguinStatisticsItem = typing.TypedDict(  # noqa: UP013
