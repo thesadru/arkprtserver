@@ -72,7 +72,7 @@ def get_charimage(char_id: str, skin_id: typing.Optional[str], *, lowres: bool =
     if lowres:
         skin_id += "b"
 
-    return get_asset("arts/charpoirtraits", char_id, normalize_filename(skin_id))
+    return get_asset("arts/characters", char_id, normalize_filename(skin_id))
 
 
 def get_charavatar(char_id: str, skin_id: typing.Optional[str]) -> str:
