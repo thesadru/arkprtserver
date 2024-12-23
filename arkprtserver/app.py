@@ -315,14 +315,7 @@ async def authorize(request: aiohttp.web.Request) -> typing.Union[arkprts.Client
 
     auth = arkprts.YostarAuth(server=request.cookies["server"], network=client.network)  # type: ignore
 
-    try:
-        await auth.login_with_token(request.cookies["channeluid"], request.cookies["token"])
-    except arkprts.errors.BaseArkprtsError:
-        response = aiohttp.web.HTTPTemporaryRedirect("/login")
-        response.del_cookie("channeluid")
-        response.del_cookie("token")
-        response.del_cookie("server")
-        return response
+    await auth.login_with_token(request.cookies["channeluid"], request.cookies["token"])
 
     return arkprts.Client(auth=auth, assets=client.assets)
 
