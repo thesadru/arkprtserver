@@ -1,5 +1,5 @@
 aiohttp[speedups]~=3.10.5
-arkprts==0.3.12
+arkprts==0.3.13
 Jinja2~=3.1.4
 
 python-dotenv~=1.0.1

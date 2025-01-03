@@ -1,8 +1,10 @@
 """Server app."""
 
 import asyncio
+import base64
 import datetime
 import logging
+import re
 import sys
 import traceback
 import typing
@@ -11,6 +13,7 @@ import urllib.parse
 import aiohttp
 import aiohttp.web
 import arkprts
+import bson
 import dotenv
 import jinja2
 
@@ -66,7 +69,7 @@ def normalize_filename(filename: str) -> str:
 
 def get_charimage(char_id: str, skin_id: typing.Optional[str], *, lowres: bool = False) -> str:
     """Get a full image of a character."""
-    if not skin_id or "@" not in skin_id and skin_id.endswith("#1"):
+    if not skin_id or ("@" not in skin_id and skin_id.endswith("#1")):
         skin_id = char_id + "_1"
 
     if lowres:
@@ -140,6 +143,104 @@ async def startup(app: aiohttp.web.Application) -> None:
 app.on_startup.append(startup)
 
 
+async def _scrape_wikigg(page: str) -> str:
+    """Scrape the raw content of arknights.wiki.gg."""
+    async with client.network.session.get(f"https://arknights.wiki.gg/wiki/{page}?action=raw") as r:
+        return await r.text()
+
+
+def _operator_to_id(name: str) -> str:
+    """Convert an operator name to its ID."""
+    name = name.strip()
+    if name == "Mlynar":
+        return "char_4064_mlynar"
+    for operatorkey, operatorvalue in client.assets.get_excel("character_table", server="en").items():
+        if operatorvalue["name"].lower() == name.lower():
+            return operatorkey
+
+    return "char_002_amiya"
+
+
+async def get_banner_operators() -> typing.Mapping[str, typing.Sequence[str]]:
+    """Get a mapping of banner IDs to banner operators. Assumes client has loaded gamedata."""
+    pagelocs = ["Headhunting/Banners"] + [f"Headhunting/Banners/Former-{i}" for i in (2024, 2023, 2022, 2021, 2020)]
+    pages = await asyncio.gather(*(_scrape_wikigg(i) for i in pagelocs))
+
+    wikibanners: typing.Sequence[typing.Mapping[str, typing.Any]] = []
+    for page in pages:
+        for match in re.finditer(r"\{\{Banners cell\|(.+?)\}\}", page):
+            arguments: typing.Mapping[str, str] = dict(i.split("=", 1) for i in match[1].split("|"))
+            dates = (arguments.get("global") or arguments["date"]).split(" &ndash; ")
+            wikioperators: typing.Sequence[str] = arguments["operators"].split(",") if "operators" in arguments else []
+            if arguments.get("type") == "linkup":
+                wikioperators = wikioperators[1:]
+            if "limited" in arguments:
+                wikioperators = sorted(
+                    wikioperators,
+                    key=lambda i: int(arguments["limited"].split(",")[wikioperators.index(i)]),
+                    reverse=True,
+                )
+            wikibanners.append(
+                {
+                    "type": arguments.get("type", "standard"),
+                    "name": arguments["name"],
+                    "start": datetime.datetime.strptime(dates[0], "%B %d, %Y").timestamp(),  # noqa: DTZ007
+                    "end": datetime.datetime.strptime(dates[1], "%B %d, %Y").timestamp(),  # noqa: DTZ007
+                    "operators": wikioperators,
+                },
+            )
+
+    databanners = client.assets.get_excel("gacha_table", server="en")["gachaPoolClient"]
+
+    operators: typing.Mapping[str, typing.Sequence[str]] = {}
+    for databanner in databanners:
+        if databanner.get("dynMeta") and "base64" in databanner["dynMeta"]:
+            databanner["dynMeta"] = bson.loads(base64.b64decode(databanner["dynMeta"]["base64"]))  # pyright: ignore
+        if databanner.get("dynMeta") and "main6RarityCharId" in databanner["dynMeta"]:
+            operators[databanner["gachaPoolId"]] = [
+                databanner["dynMeta"]["main6RarityCharId"],
+                databanner["dynMeta"]["sub6RarityCharId"],
+                *databanner["dynMeta"]["rare5CharList"],
+            ]
+            continue
+
+        for wikibanner in wikibanners:
+            if wikibanner["name"].lower() == databanner["gachaPoolName"].lower():
+                operators[databanner["gachaPoolId"]] = list(map(_operator_to_id, wikibanner["operators"]))
+                break
+            if (
+                abs(wikibanner["start"] - databanner["openTime"]) < 86400
+                and abs(wikibanner["end"] - databanner["endTime"]) < 86400
+            ):
+                operators[databanner["gachaPoolId"]] = list(map(_operator_to_id, wikibanner["operators"]))
+                break
+
+    # special known cases that happen to be missing from the wiki:
+    operators["NORM_EN_0_1_1"] = list(map(_operator_to_id, ["Angelina", "Croissant", "Exusiai", "Skyfire", "Zima"]))
+    operators["NORM_EN_2_0_3"] = list(map(_operator_to_id, ["Hoshiguma", "Liskarm", "Meteorite"]))
+    # operators["NORM_EN_4_0_5"] = # unknown, "Fire Dancers" May 2020
+    operators["NORM_EN_5_0_4"] = list(
+        map(
+            _operator_to_id,
+            [
+                "Ch'en",
+                "SilverAsh",
+                "Eyjafjalla",
+                "Angelina",
+                "Swire",
+                "Manticore",
+                "Platinum",
+                "Texas",
+                "Croissant",
+                "Ptilopsis",
+            ],
+        ),
+    )  # fmt: off
+    operators["SINGLE_EN_27_0_1"] = list(map(_operator_to_id, ["Hoederer"]))
+
+    return operators
+
+
 async def startup_gamedata(app: aiohttp.web.Application) -> None:
     """Load gamedata."""
     if isinstance(client.assets, arkprts.BundleAssets):
@@ -149,6 +250,7 @@ async def startup_gamedata(app: aiohttp.web.Application) -> None:
 
     env.globals["announcements"] = await client.network.request("an")  # type: ignore
     env.globals["preannouncement"] = await client.network.request("prean")  # type: ignore
+    env.globals["banneroperators"] = await get_banner_operators()  # type: ignore
 
     app.update(env.globals)  # type: ignore
 
@@ -346,7 +448,7 @@ async def bundles(request: aiohttp.web.Request) -> aiohttp.web.Response:
         version = client.network.versions[server]["resVersion"]
 
     hot_update_list_url = client.network.domains[server]["hu"] + f"/Android/assets/{version}/hot_update_list.json"
-    hot_update_list = await network.raw_request("GET",hot_update_list_url)
+    hot_update_list = await network.raw_request("GET", hot_update_list_url)
 
     buttons = " ".join(f'<a href="?server={server}">{server}</a>' for server in ("en", "kr", "jp", "tw", "cn", "bili"))
     hul_link = (
